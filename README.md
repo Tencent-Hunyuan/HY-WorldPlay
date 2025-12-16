@@ -101,6 +101,8 @@ pip install -r requirements.txt
 
 - Flash Attention: Install Flash Attention for faster inference and reduced GPU memory consumption. Detailed installation instructions are available at [Flash Attention](https://github.com/Dao-AILab/flash-attention).
 
+- HunyuanVideo-1.5 Base Model: Download the pretrained HunyuanVideo-1.5 model following the instructions at [HunyuanVideo-1.5 Download](https://huggingface.co/tencent/HunyuanVideo-1.5#-download-pretrained-models). This base model is required before using the HY-World 1.5 checkpoints.
+
 
 ## 🎮 Quick Start
 
