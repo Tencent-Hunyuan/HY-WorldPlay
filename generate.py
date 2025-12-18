@@ -219,6 +219,8 @@ def generate_video(args):
             few_step=args.few_step,
             chunk_latent_frames=4 if args.model_type == "ar" else 16,
             model_type=args.model_type,
+            user_height=args.height,
+            user_width=args.width,
             **extra_kwargs,
         )
 
@@ -338,6 +340,14 @@ def main():
     parser.add_argument(
         '--model_type', type=str, required=True, choices=['bi', 'ar'],
         help='inference bidirectional or autoregressive model. '
+    )
+    parser.add_argument(
+        '--height', type=int, default=None,
+        help='height for generation (recommended to set as 480)'
+    )
+    parser.add_argument(
+        '--width', type=int, default=None,
+        help='width for generation (recommended to set as 832)'
     )
 
     args = parser.parse_args()

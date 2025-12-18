@@ -16,10 +16,12 @@ BI_ACTION_MODEL_PATH=            # Path to our HY-World 1.5 bidirectional checkp
 AR_DISTILL_ACTION_MODEL_PATH=    # Path to our HY-World 1.5 autoregressive distilled checkpoints
 POSE_JSON_PATH=./assets/pose/test_forward_32_latents.json   # Path to the customized camera trajectory
 NUM_FRAMES=125
+WIDTH=832
+HEIGHT=480
 
 # Configuration for faster inference
-# The maximum number recommended is 4.
-N_INFERENCE_GPU=4 # Parallel inference GPU count.
+# The maximum number recommended is 8.
+N_INFERENCE_GPU=8 # Parallel inference GPU count.
 
 # Configuration for better quality
 REWRITE=false # Enable prompt rewriting. Please ensure rewrite vLLM server is deployed and configured.
@@ -40,6 +42,8 @@ torchrun --nproc_per_node=$N_INFERENCE_GPU generate.py  \
   --model_path $MODEL_PATH \
   --action_ckpt $BI_ACTION_MODEL_PATH \
   --few_step false \
+  --width $WIDTH \
+  --height $HEIGHT \
   --model_type 'bi'
 
 # inference with autoregressive model
@@ -57,6 +61,8 @@ torchrun --nproc_per_node=$N_INFERENCE_GPU generate.py  \
 #  --model_path $MODEL_PATH \
 #  --action_ckpt $AR_ACTION_MODEL_PATH \
 #  --few_step false \
+#  --width $WIDTH \
+#  --height $HEIGHT \
 #  --model_type 'ar'
 
 # inference with autoregressive distilled model
@@ -75,4 +81,6 @@ torchrun --nproc_per_node=$N_INFERENCE_GPU generate.py  \
 #  --action_ckpt $AR_DISTILL_ACTION_MODEL_PATH \
 #  --few_step true \
 #  --num_inference_steps 4 \
+#  --width $WIDTH \
+#  --height $HEIGHT \
 #  --model_type 'ar'

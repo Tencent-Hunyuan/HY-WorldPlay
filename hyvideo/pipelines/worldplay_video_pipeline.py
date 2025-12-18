@@ -937,7 +937,6 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                    Ks,
                    action,
                    device,):
-
         self.init_kv_cache()
         positive_idx = 1 if self.do_classifier_free_guidance else 0
         stabilization_level = 15
@@ -949,10 +948,13 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                 "byt5_text_mask": extra_kwargs["byt5_text_mask"][positive_idx, None, ...],
             }
             t_expand_txt = torch.tensor([0]).to(device).to(latents.dtype)
-            self.transformer.forward_txt(
-                t_expand_txt,
-                prompt_embeds[positive_idx, None, ...],
-                prompt_mask[positive_idx, None, ...],
+            self.transformer(
+                bi_inference=False,
+                ar_txt_inference=True,
+                ar_vision_inference=False,
+                timestep_txt=t_expand_txt,
+                text_states=prompt_embeds[positive_idx, None, ...],
+                encoder_attention_mask=prompt_mask[positive_idx, None, ...],
                 vision_states=vision_states[positive_idx, None, ...],
                 mask_type=task_type,
                 extra_kwargs=extra_kwargs_pos,
@@ -965,10 +967,13 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                     "byt5_text_mask": extra_kwargs["byt5_text_mask"][0, None, ...],
                 }
                 t_expand_txt = torch.tensor([0]).to(device).to(latents.dtype)
-                self.transformer.forward_txt(
-                    t_expand_txt,
-                    prompt_embeds[0, None, ...],
-                    prompt_mask[0, None, ...],
+                self.transformer(
+                    bi_inference=False,
+                    ar_txt_inference=True,
+                    ar_vision_inference=False,
+                    timestep_txt=t_expand_txt,
+                    text_states=prompt_embeds[0, None, ...],
+                    encoder_attention_mask=prompt_mask[0, None, ...],
                     vision_states=vision_states[0, None, ...],
                     mask_type=task_type,
                     extra_kwargs=extra_kwargs_neg,
@@ -1010,9 +1015,12 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                 # compute kv cache
                 with (torch.autocast(device_type="cuda", dtype=self.target_dtype, enabled=self.autocast_enabled),
                       auto_offload_model(self.transformer, self.execution_device,enabled=self.enable_offloading)):
-                    self.transformer.forward_vision(
-                        context_latents_input,
-                        context_timestep,
+                    self.transformer(
+                        bi_inference=False,
+                        ar_txt_inference=False,
+                        ar_vision_inference=True,
+                        hidden_states=context_latents_input,
+                        timestep=context_timestep,
                         timestep_r=None,
                         mask_type=task_type,
                         return_dict=False,
@@ -1025,9 +1033,12 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                         start_rope_start_idx=0,
                     )
                     if self.do_classifier_free_guidance:
-                        self.transformer.forward_vision(
-                            context_latents_input,
-                            context_timestep,
+                        self.transformer(
+                            bi_inference=False,
+                            ar_txt_inference=False,
+                            ar_vision_inference=True,
+                            hidden_states=context_latents_input,
+                            timestep=context_timestep,
                             timestep_r=None,
                             mask_type=task_type,
                             return_dict=False,
@@ -1061,9 +1072,12 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                     latents_concat = self.scheduler.scale_model_input(latents_concat, t)
 
                     with torch.autocast(device_type="cuda", dtype=self.target_dtype, enabled=self.autocast_enabled):
-                        noise_pred = self.transformer.forward_vision(
-                            latents_concat,
-                            timestep_input,
+                        noise_pred = self.transformer(
+                            bi_inference=False,
+                            ar_txt_inference=False,
+                            ar_vision_inference=True,
+                            hidden_states=latents_concat,
+                            timestep=timestep_input,
                             timestep_r=None,
                             mask_type=task_type,
                             return_dict=False,
@@ -1076,9 +1090,12 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                             start_rope_start_idx=len(selected_frame_indices),
                         )[0]
                         if self.do_classifier_free_guidance:
-                            noise_pred_uncond = self.transformer.forward_vision(
-                                latents_concat,
-                                timestep_input,
+                            noise_pred_uncond = self.transformer(
+                                bi_inference=False,
+                                ar_txt_inference=False,
+                                ar_vision_inference=True,
+                                hidden_states=latents_concat,
+                                timestep=timestep_input,
                                 timestep_r=None,
                                 mask_type=task_type,
                                 return_dict=False,
@@ -1137,10 +1154,10 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                 to_remove = list(range(current_frame_idx, current_frame_idx + self.chunk_latent_frames))
                 selected_frame_indices = [x for x in selected_frame_indices if x not in to_remove]
 
-                context_latents = latents[:,:, selected_frame_indices]
+                context_latents = latents[:, :, selected_frame_indices]
                 context_w2c = viewmats[:, selected_frame_indices]
-                context_Ks = Ks[:,selected_frame_indices]
-                context_action = action[:,selected_frame_indices]
+                context_Ks = Ks[:, selected_frame_indices]
+                context_action = action[:, selected_frame_indices]
 
                 self.scheduler.set_timesteps(self.num_inference_steps, device=device)
 
@@ -1166,7 +1183,6 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                         latent_model_input = torch.cat([context_latents, latents_model_now], dim=2)
                         cond_latents_input = cond_latents[:, :, :latent_model_input.shape[2]]
 
-
                     viewmats_input = viewmats[:, start_idx: end_idx]
                     Ks_input = Ks[:, start_idx: end_idx]
                     action_input = action[:, start_idx: end_idx]
@@ -1190,12 +1206,15 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
 
                     with torch.autocast(device_type="cuda", dtype=self.target_dtype, enabled=self.autocast_enabled):
                         output = self.transformer(
-                            latents_concat,
-                            t_expand,
-                            t_expand_txt,
-                            prompt_embeds,
-                            None,
-                            prompt_mask,
+                            bi_inference=True,
+                            ar_txt_inference=False,
+                            ar_vision_inference=False,
+                            hidden_states=latents_concat,
+                            timestep=t_expand,
+                            timestep_txt=t_expand_txt,
+                            text_states=prompt_embeds,
+                            text_states_2=None,
+                            encoder_attention_mask=prompt_mask,
                             timestep_r=None,
                             vision_states=vision_states,
                             mask_type=task_type,
@@ -1255,6 +1274,8 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
         few_step: bool = False,
         chunk_latent_frames: int = 4,
         model_type: str = "ar",
+        user_height: Optional[int] = None,
+        user_width: Optional[int] = None,
         **kwargs,
     ):
         r"""
@@ -1412,6 +1433,9 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                 width = int(width)
                 height = int(height)
                 height, width = self.get_closest_resolution_given_original_size((width, height), self.ideal_resolution)
+
+        height = user_height if user_height is not None else height
+        width = user_width if user_width is not None else width
 
         latent_target_length, latent_height, latent_width = self.get_latent_size(video_length, height, width)
         n_tokens = latent_target_length * latent_height * latent_width
@@ -1703,11 +1727,6 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
         else:
             cached_folder = pretrained_model_name_or_path
 
-        if enable_group_offloading is None:
-            offloading_config = cls.get_offloading_config()
-            enable_offloading = offloading_config['enable_offloading']
-            enable_group_offloading = offloading_config['enable_group_offloading']
-
         if enable_offloading:
             # Assuming the user does not have sufficient GPU memory, we initialize the models on CPU
             device = torch.device('cpu')
@@ -1732,7 +1751,7 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
         transformer = HunyuanVideo_1_5_DiffusionTransformer.from_pretrained(
             os.path.join(cached_folder, "transformer", transformer_version), torch_dtype=transformer_dtype, 
             low_cpu_mem_usage=True,
-        ).to(transformer_init_device)
+        )
 
         transformer.add_action_parameters()
         if action_ckpt is not None:
@@ -1742,7 +1761,7 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
             transformer.load_state_dict(state_dict, strict=True)
             print('HY-World 1.5 loading from: ', action_ckpt)
 
-        transformer = transformer.to(transformer_dtype)
+        transformer = transformer.to(transformer_dtype).to(transformer_init_device)
 
         vae = hunyuanvideo_15_vae_w_cache.AutoencoderKLConv3D.from_pretrained(
             os.path.join(cached_folder, "vae"), 
@@ -1812,21 +1831,6 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
 
         return pipeline
 
-    @staticmethod
-    def get_offloading_config(memory_limitation=None):
-        if memory_limitation is None:
-            memory_limitation = get_gpu_memory()
-        GB = 1024 * 1024 * 1024
-        if memory_limitation < 60 * GB:
-            return {
-                'enable_offloading': True,
-                'enable_group_offloading': True,
-            }
-        else:
-            return {
-                'enable_offloading': True,
-                'enable_group_offloading': False,
-            }
 
     @staticmethod
     def get_vae_inference_config(memory_limitation=None):

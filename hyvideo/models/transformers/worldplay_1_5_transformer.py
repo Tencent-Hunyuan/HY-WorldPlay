@@ -1149,7 +1149,6 @@ class HunyuanVideo_1_5_DiffusionTransformer(ModelMixin, ConfigMixin):
         viewmats: Optional[torch.Tensor] = None,
         Ks: Optional[torch.Tensor] = None,
     ) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
-
         if guidance is None:
             guidance = torch.tensor(
                 [6016.0], device=hidden_states.device, dtype=torch.bfloat16

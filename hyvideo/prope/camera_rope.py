@@ -190,7 +190,7 @@ def _apply_tiled_projmat(
     # - feat_dim => (feat_dim // 4, 4)
     (batch, num_heads, seqlen, feat_dim) = feats.shape
     cameras = matrix.shape[1]
-    assert seqlen > cameras and seqlen % cameras == 0
+    assert seqlen >= cameras and seqlen % cameras == 0
     D = matrix.shape[-1]
     assert matrix.shape == (batch, cameras, D, D)
     assert feat_dim % D == 0
