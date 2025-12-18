@@ -18,7 +18,7 @@ POSE_JSON_PATH=./assets/pose/test_forward_32_latents.json   # Path to the custom
 NUM_FRAMES=125
 
 # Configuration for faster inference
-# For AR inference, the maximum number recommended is 4. For bidirectional models, it can be set to 8.
+# The maximum number recommended is 4.
 N_INFERENCE_GPU=4 # Parallel inference GPU count.
 
 # Configuration for better quality

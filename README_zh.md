@@ -150,7 +150,7 @@ POSE_JSON_PATH=./assets/pose/test_forward_32_latents.json   # 自定义相机轨
 NUM_FRAMES=125
 
 # 更快推理的配置
-# 对于 AR 推理，建议的最大数量是 4。对于双向模型，可以设置为 8。
+# 建议的最大数量是 4。
 N_INFERENCE_GPU=4 # 并行推理 GPU 数量。
 
 # 更好质量的配置
