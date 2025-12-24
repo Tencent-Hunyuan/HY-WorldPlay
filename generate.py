@@ -27,6 +27,8 @@ import imageio
 import json
 import numpy as np
 from scipy.spatial.transform import Rotation as R
+from PIL import Image, ImageDraw, ImageFont
+from moviepy.editor import VideoFileClip, VideoClip
 
 from hyvideo.pipelines.worldplay_video_pipeline import HunyuanVideo_1_5_Pipeline
 from hyvideo.commons.parallel_states import initialize_parallel_state
@@ -294,6 +296,311 @@ def camera_center_normalization(w2c):
     c2w_aligned = np.array([C0_inv @ C for C in c2w])
     return np.linalg.inv(c2w_aligned)
 
+def parse_pose_string_to_actions(pose_string, fps=6):
+    """
+    Parse pose string to action timeline with durations.
+
+    Args:
+        pose_string: str, comma-separated pose commands (e.g., "w-3, right-0.5, d-4")
+        fps: int, frames per second
+
+    Returns:
+        list of dict: Each dict contains {"second": int, "actions": {"forward": 0/1/-1, "left": 0/1/-1, "yaw": 0/1/-1, "pitch": 0/1/-1}}
+    """
+    actions_timeline = []
+    commands = [cmd.strip() for cmd in pose_string.split(',')]
+
+    current_second = 0
+
+    for cmd in commands:
+        if not cmd:
+            continue
+
+        parts = cmd.split('-')
+        if len(parts) != 2:
+            raise ValueError(f"Invalid pose command: {cmd}. Expected format: 'action-duration'")
+
+        action = parts[0].strip()
+        try:
+            duration = float(parts[1].strip())
+        except ValueError:
+            raise ValueError(f"Invalid duration in command: {cmd}")
+
+        num_seconds = int(np.ceil(duration))
+
+        # Map action to action values
+        action_values = {"forward": 0, "left": 0, "yaw": 0, "pitch": 0}
+
+        if action == 'w':
+            action_values["forward"] = 1
+        elif action == 's':
+            action_values["forward"] = -1
+        elif action == 'a':
+            action_values["left"] = 1
+        elif action == 'd':
+            action_values["left"] = -1
+        elif action == 'up':
+            action_values["pitch"] = 1
+        elif action == 'down':
+            action_values["pitch"] = -1
+        elif action == 'left':
+            action_values["yaw"] = -1
+        elif action == 'right':
+            action_values["yaw"] = 1
+        else:
+            raise ValueError(f"Unknown action: {action}")
+
+        # Add this action for its duration
+        for _ in range(num_seconds):
+            actions_timeline.append({
+                "second": current_second,
+                "actions": action_values.copy()
+            })
+            current_second += 1
+
+    return actions_timeline
+
+def draw_rounded_rectangle(draw, xy, radius, fill=None, outline=None, width=1):
+    """Draw a rounded rectangle."""
+    x1, y1, x2, y2 = xy
+    diameter = radius * 2
+
+    # Draw four corners (circles)
+    draw.ellipse([x1, y1, x1 + diameter, y1 + diameter], fill=fill, outline=outline, width=width)
+    draw.ellipse([x2 - diameter, y1, x2, y1 + diameter], fill=fill, outline=outline, width=width)
+    draw.ellipse([x1, y2 - diameter, x1 + diameter, y2], fill=fill, outline=outline, width=width)
+    draw.ellipse([x2 - diameter, y2 - diameter, x2, y2], fill=fill, outline=outline, width=width)
+
+    # Draw two rectangles to fill the middle
+    draw.rectangle([x1 + radius, y1, x2 - radius, y2], fill=fill)
+    draw.rectangle([x1, y1 + radius, x2, y2 - radius], fill=fill)
+
+    # Draw border if outline is specified
+    if outline:
+        # Top and bottom lines
+        draw.line([x1 + radius, y1, x2 - radius, y1], fill=outline, width=width)
+        draw.line([x1 + radius, y2, x2 - radius, y2], fill=outline, width=width)
+        # Left and right lines
+        draw.line([x1, y1 + radius, x1, y2 - radius], fill=outline, width=width)
+        draw.line([x2, y1 + radius, x2, y2 - radius], fill=outline, width=width)
+
+def create_wasd_keyboard(actions, key_size=70, key_spacing=6, corner_radius=14):
+    """Create WASD keyboard overlay."""
+    keyboard_width = 3 * key_size + 2 * key_spacing
+    keyboard_height = 2 * key_size + key_spacing
+
+    img = Image.new('RGBA', (keyboard_width, keyboard_height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    bg_normal = (0, 0, 0, 128)
+    bg_active = (30, 120, 255, 220)
+    text_color = (255, 255, 255, 255)
+    font_size = 28
+
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+    except (IOError, OSError):
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/TTF/DejaVuSans-Bold.ttf", font_size)
+        except (IOError, OSError):
+            font = ImageFont.load_default()
+
+    def draw_key(x, y, label, is_active):
+        bg_color = bg_active if is_active else bg_normal
+        draw_rounded_rectangle(draw, [x, y, x + key_size, y + key_size], radius=corner_radius, fill=bg_color)
+        bbox = draw.textbbox((0, 0), label, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        text_x = x + (key_size - text_width) // 2
+        text_y = y + (key_size - text_height) // 2
+        draw.text((text_x, text_y), label, fill=text_color, font=font)
+
+    forward_val = actions.get("forward", 0)
+    left_val = actions.get("left", 0)
+
+    w_active = forward_val > 0
+    s_active = forward_val < 0
+    a_active = left_val > 0
+    d_active = left_val < 0
+
+    wasd_keys = [
+        ("W", 1, 0, w_active),
+        ("A", 0, 1, a_active),
+        ("S", 1, 1, s_active),
+        ("D", 2, 1, d_active),
+    ]
+
+    for label, col, row, is_active in wasd_keys:
+        x = col * (key_size + key_spacing)
+        y = row * (key_size + key_spacing)
+        draw_key(x, y, label, is_active)
+
+    return img
+
+def create_arrow_keyboard(actions, key_size=70, key_spacing=6, corner_radius=14):
+    """Create arrow keys keyboard overlay with triangle symbols."""
+    keyboard_width = 3 * key_size + 2 * key_spacing
+    keyboard_height = 2 * key_size + key_spacing
+
+    img = Image.new('RGBA', (keyboard_width, keyboard_height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    bg_normal = (0, 0, 0, 128)
+    bg_active = (30, 120, 255, 220)
+    text_color = (255, 255, 255, 255)
+
+    def draw_key_with_triangle(x, y, direction, is_active):
+        bg_color = bg_active if is_active else bg_normal
+        draw_rounded_rectangle(draw, [x, y, x + key_size, y + key_size], radius=corner_radius, fill=bg_color)
+        cx = x + key_size // 2
+        cy = y + key_size // 2
+        size = key_size // 8
+        if direction == "up":
+            points = [(cx, cy - size), (cx - size, cy + size // 2), (cx + size, cy + size // 2)]
+        elif direction == "down":
+            points = [(cx, cy + size), (cx - size, cy - size // 2), (cx + size, cy - size // 2)]
+        elif direction == "left":
+            points = [(cx - size, cy), (cx + size // 2, cy - size), (cx + size // 2, cy + size)]
+        elif direction == "right":
+            points = [(cx + size, cy), (cx - size // 2, cy - size), (cx - size // 2, cy + size)]
+        draw.polygon(points, fill=text_color)
+
+    yaw_val = actions.get("yaw", 0)
+    pitch_val = actions.get("pitch", 0)
+
+    up_active = pitch_val > 0
+    down_active = pitch_val < 0
+    left_active = yaw_val < 0
+    right_active = yaw_val > 0
+
+    arrow_keys = [
+        ("up", 1, 0, up_active),
+        ("left", 0, 1, left_active),
+        ("down", 1, 1, down_active),
+        ("right", 2, 1, right_active),
+    ]
+
+    for direction, col, row, is_active in arrow_keys:
+        kx = col * (key_size + key_spacing)
+        ky = row * (key_size + key_spacing)
+        draw_key_with_triangle(kx, ky, direction, is_active)
+
+    return img
+
+def blend_overlay(base_frame, overlay, position):
+    """Blend an RGBA overlay onto a RGB frame."""
+    x, y = position
+    overlay_array = np.array(overlay)
+
+    oh, ow = overlay_array.shape[:2]
+    bh, bw = base_frame.shape[:2]
+
+    x = max(0, min(x, bw - 1))
+    y = max(0, min(y, bh - 1))
+
+    if x + ow > bw:
+        ow = bw - x
+        overlay_array = overlay_array[:, :ow]
+    if y + oh > bh:
+        oh = bh - y
+        overlay_array = overlay_array[:oh, :]
+
+    if ow <= 0 or oh <= 0:
+        return base_frame
+
+    overlay_rgb = overlay_array[:, :, :3].astype(np.float32)
+    overlay_alpha = overlay_array[:, :, 3:4].astype(np.float32) / 255.0
+
+    base_region = base_frame[y:y+oh, x:x+ow].astype(np.float32)
+
+    blended = (overlay_rgb * overlay_alpha + base_region * (1 - overlay_alpha)).astype(np.uint8)
+
+    result = base_frame.copy()
+    result[y:y+oh, x:x+ow] = blended
+
+    return result
+
+def add_keyboard_overlay_to_video(video_path, output_path, actions_timeline):
+    """Add keyboard overlay to an existing video."""
+    try:
+        video = VideoFileClip(video_path)
+        width, height = video.size
+        fps = video.fps
+        duration = video.duration
+
+        key_size = 70
+        key_spacing = 6
+        corner_radius = 14
+        margin = 40
+
+        keyboard_width = 3 * key_size + 2 * key_spacing
+        keyboard_height = 2 * key_size + key_spacing
+
+        wasd_pos = (margin, height - margin - keyboard_height)
+        arrow_pos = (width - margin - keyboard_width, height - margin - keyboard_height)
+
+        wasd_cache = {}
+        arrow_cache = {}
+
+        def get_actions_at_time(t):
+            second_idx = int(t)
+            if 0 <= second_idx < len(actions_timeline):
+                return actions_timeline[second_idx]["actions"]
+            return {"forward": 0, "left": 0, "yaw": 0, "pitch": 0}
+
+        def make_frame(t):
+            frame = video.get_frame(t)
+            actions = get_actions_at_time(t)
+
+            def sign(x):
+                if x > 0:
+                    return 1
+                elif x < 0:
+                    return -1
+                return 0
+
+            wasd_key = (sign(actions.get("forward", 0)), sign(actions.get("left", 0)))
+            arrow_key = (sign(actions.get("yaw", 0)), sign(actions.get("pitch", 0)))
+
+            if wasd_key not in wasd_cache:
+                wasd_cache[wasd_key] = create_wasd_keyboard(actions, key_size, key_spacing, corner_radius)
+            wasd_img = wasd_cache[wasd_key]
+
+            if arrow_key not in arrow_cache:
+                arrow_cache[arrow_key] = create_arrow_keyboard(actions, key_size, key_spacing, corner_radius)
+            arrow_img = arrow_cache[arrow_key]
+
+            frame = blend_overlay(frame, wasd_img, wasd_pos)
+            frame = blend_overlay(frame, arrow_img, arrow_pos)
+
+            return frame
+
+        output_clip = VideoClip(make_frame, duration=duration)
+        output_clip = output_clip.set_fps(fps)
+
+        if video.audio is not None:
+            output_clip = output_clip.set_audio(video.audio)
+
+        output_clip.write_videofile(
+            output_path,
+            codec='libx264',
+            audio_codec='aac',
+            temp_audiofile='temp-audio.m4a',
+            remove_temp=True,
+            logger=None
+        )
+
+        video.close()
+        output_clip.close()
+
+        return True
+
+    except Exception as e:
+        import traceback
+        print(f"Error adding keyboard overlay: {e}")
+        traceback.print_exc()
+        return False
+
 def generate_video(args):
     assert ((args.video_length - 1) // 4 + 1) % 4 == 0, "number of latents must be divisible by 4"
     initialize_infer_state(args)
@@ -367,9 +674,16 @@ def generate_video(args):
 
         save_video_path = os.path.join(output_path, "gen.mp4")
         save_video_sr_path = os.path.join(output_path, "gen_sr.mp4")
+
+        # Determine which video to process for UI overlay
+        video_to_process = None
+        final_video_path = None
+
         if enable_sr and hasattr(out, 'sr_videos'):
             save_video(out.sr_videos, save_video_sr_path)
             print(f"Saved SR video to: {save_video_sr_path}")
+            video_to_process = save_video_sr_path
+            final_video_path = save_video_sr_path
 
             if args.save_pre_sr_video:
                 save_video(out.videos, save_video_path)
@@ -377,6 +691,30 @@ def generate_video(args):
         else:
             save_video(out.videos, save_video_path)
             print(f"Saved video to: {save_video_path}")
+            video_to_process = save_video_path
+            final_video_path = save_video_path
+
+        # Add keyboard overlay if --with-ui is enabled and pose is a string
+        if args.with_ui and isinstance(args.pose, str) and not args.pose.endswith('.json'):
+            print(f"Adding keyboard overlay to video...")
+            try:
+                actions_timeline = parse_pose_string_to_actions(args.pose)
+
+                # Create temporary output path for video with UI
+                video_with_ui_path = os.path.join(output_path, "gen_with_ui_temp.mp4")
+
+                if add_keyboard_overlay_to_video(video_to_process, video_with_ui_path, actions_timeline):
+                    # Replace original video with UI version
+                    os.replace(video_with_ui_path, final_video_path)
+                    print(f"Successfully added keyboard overlay to: {final_video_path}")
+                else:
+                    print(f"Failed to add keyboard overlay, keeping original video")
+                    if os.path.exists(video_with_ui_path):
+                        os.remove(video_with_ui_path)
+            except Exception as e:
+                print(f"Error processing keyboard overlay: {e}")
+                import traceback
+                traceback.print_exc()
 
 
 def main():
@@ -484,6 +822,12 @@ def main():
     parser.add_argument(
         '--width', type=int, default=None,
         help='width for generation (recommended to set as 832)'
+    )
+    parser.add_argument(
+        '--with-ui', type=str_to_bool, nargs='?', const=True, default=False,
+        help='Add keyboard overlay to generated video (default: false). '
+             'Only works with pose string input, not JSON files. '
+             'Use --with-ui or --with-ui true/1 to enable, --with-ui false/0 to disable'
     )
 
     args = parser.parse_args()

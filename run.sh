@@ -14,7 +14,7 @@ MODEL_PATH=                   # Path to pretrained hunyuanvideo-1.5 model
 AR_ACTION_MODEL_PATH=         # Path to our HY-World 1.5 autoregressive checkpoints
 BI_ACTION_MODEL_PATH=         # Path to our HY-World 1.5 bidirectional checkpoints
 AR_DISTILL_ACTION_MODEL_PATH= # Path to our HY-World 1.5 autoregressive distilled checkpoints
-POSE='w-6'                    # Camera trajectory: pose string (e.g., 'w-3, right-0.5') or JSON file path
+POSE='w-3 d-3'                # Camera trajectory: pose string (e.g., 'w-3, right-0.5') or JSON file path
 NUM_FRAMES=125
 WIDTH=832
 HEIGHT=480
@@ -79,4 +79,4 @@ torchrun --nproc_per_node=$N_INFERENCE_GPU generate.py \
   --action_ckpt $AR_DISTILL_ACTION_MODEL_PATH \
   --few_step true \
   --num_inference_steps 4 \
-  --model_type 'ar'
+  --model_type 'ar' --with-ui
