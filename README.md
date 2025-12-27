@@ -47,19 +47,32 @@ https://github.com/user-attachments/assets/9fd12b40-41ab-4201-8667-8b333db1123d
 
 
 ## 📋 Table of Contents
+- [🎥 Video](#-video)
 - [🔥 News](#-news)
 - [📋 Table of Contents](#-table-of-contents)
 - [📖 Introduction](#-introduction)
 - [✨ Highlights](#-highlights)
 - [📜 System Requirements](#-system-requirements)
 - [🛠️ Dependencies and Installation](#️-dependencies-and-installation)
+  - [1. Create Environment](#1-create-environment)
+  - [2. Install Flash Attention (Optional but Recommended)](#2-install-flash-attention-optional-but-recommended)
+  - [3. Download All Required Models](#3-download-all-required-models)
 - [🎮 Quick Start](#-quick-start)
-- [🧱 Download Pretrained Models](#-download-pretrained-models)
+- [🧱 Model Checkpoints](#-model-checkpoints)
 - [🔑 Inference](#-inference)
+  - [Configure Model Paths](#configure-model-paths)
+  - [Configuration Options](#configuration-options)
+  - [Model Selection](#model-selection)
+  - [Camera Trajectory Control](#camera-trajectory-control)
+    - [Option 1: Pose String (Recommended for Quick Testing)](#option-1-pose-string-recommended-for-quick-testing)
+    - [Option 2: Custom JSON Files](#option-2-custom-json-files)
+  - [Prompt Rewriting (Optional)](#prompt-rewriting-optional)
+  - [Run Inference](#run-inference)
 - [📊 Evaluation](#-evaluation)
 - [🎬 More Examples](#-more-examples)
 - [📝 TODO](#-todo)
 - [📚 Citation](#-citation)
+- [Contact](#contact)
 - [🙏 Acknowledgements](#-acknowledgements)
 
 ## 📖 Introduction
@@ -155,7 +168,13 @@ Try our **online demo** without installation: https://3d.hunyuan.tencent.com/sce
 |-------|--------------|----------|
 | HY-World1.5-Bidirectional-480P-I2V | Bidirectional attention model with full context awareness. | [Link](https://huggingface.co/tencent/HY-WorldPlay/tree/main/bidirectional_model) |
 | HY-World1.5-Autoregressive-480P-I2V | Autoregressive model with reconstituted context memory. | [Link](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_model) |
+| HY-World1.5-Autoregressive-480P-I2V-rl | Autoregressive model with RL post-training. | To be released |
 | HY-World1.5-Autoregressive-480P-I2V-distill | Distilled autoregressive model optimized for fast inference (4 steps). | [Link](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_distilled_action_model) |   
+| HY-World1.5-Autoregressive-480P-I2V-rl-distill | Distilled autoregressive model with RL post-training. | To be released | 
+
+<p align="center">
+  <img src="assets/model_zoo.png">
+</p>  
 
 ## 🔑 Inference
 
