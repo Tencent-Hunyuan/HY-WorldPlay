@@ -52,6 +52,8 @@ from hyvideo.commons import (
 )
 from hyvideo.commons.parallel_states import get_parallel_state
 
+from hyvideo.commons.infer_state import get_infer_state
+
 from hyvideo.models.autoencoders import hunyuanvideo_15_vae_w_cache
 from hyvideo.models.text_encoders import PROMPT_TEMPLATE, TextEncoder
 from hyvideo.models.text_encoders.byT5 import load_glyph_byT5_v2
@@ -1766,6 +1768,14 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
             print('HY-World 1.5 loading from: ', action_ckpt)
 
         transformer = transformer.to(transformer_dtype).to(transformer_init_device)
+
+        infer_state = get_infer_state()
+        if infer_state.use_fp8_gemm:
+            from angelslim.compressor.diffusion import DynamicDiTQuantizer
+            quant_type = infer_state.quant_type
+            include_patterns = infer_state.include_patterns
+            quantizer = DynamicDiTQuantizer(quant_type=quant_type, include_patterns=include_patterns)
+            quantizer.convert_linear(transformer)
 
         vae = hunyuanvideo_15_vae_w_cache.AutoencoderKLConv3D.from_pretrained(
             os.path.join(cached_folder, "vae"), 

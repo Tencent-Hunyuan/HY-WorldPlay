@@ -833,6 +833,33 @@ def main():
              'Use --with-ui or --with-ui true/1 to enable, --with-ui false/0 to disable'
     )
 
+    parser.add_argument(
+        '--use_sageattn', type=str_to_bool, nargs='?', const=True, default=False,
+        help='Enable sageattn (default: false). '
+             'Use --use_sageattn or --use_sageattn true/1 to enable, '
+             '--use_sageattn false/0 to disable'
+    )
+    parser.add_argument(
+        '--sage_blocks_range', type=str, default="0-53",
+        help='Sageattn blocks range (e.g., 0-5 or 0,1,2,3,4,5)'
+    )
+
+    # fp8 gemm related
+    parser.add_argument(
+        '--use_fp8_gemm', type=str_to_bool, nargs='?', const=True, default=False,
+        help='Enable fp8 gemm for transformer (default: false). '
+             'Use --use_fp8_gemm or --use_fp8_gemm true/1 to enable, '
+             '--use_fp8_gemm false/0 to disable'
+    )
+    parser.add_argument(
+        '--quant_type', type=str, default="fp8-per-block",
+        help='Quantization type for fp8 gemm (e.g., fp8-per-tensor-weight-only, fp8-per-tensor, fp8-per-block)'
+    )
+    parser.add_argument(
+        '--include_patterns', type=str, default="double_blocks",
+        help='Include patterns for fp8 gemm (default: double_blocks)'
+    )
+
     args = parser.parse_args()
     
     assert args.image_path is not None

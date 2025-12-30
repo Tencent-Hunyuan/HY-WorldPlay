@@ -156,13 +156,20 @@ def sequence_parallel_attention_txt(q, k, v,
         t_kv['k_txt'] = encoder_key
         t_kv['v_txt'] = encoder_value
 
-    encoder_hidden_states = F.scaled_dot_product_attention(
-                                                        encoder_query, 
-                                                        encoder_key, 
-                                                        encoder_value, 
-                                                        dropout_p=0.0, 
-                                                        is_causal=False
-                                                        )
+    infer_state = get_infer_state()
+    enable_sageattn = (infer_state.enable_sageattn and 
+                        block_idx in infer_state.sage_blocks_range)
+    if enable_sageattn:
+        from sageattention import sageattn
+        encoder_hidden_states = sageattn(encoder_query, encoder_key, encoder_value, tensor_layout="HND", is_causal=False)
+    else:
+        encoder_hidden_states = F.scaled_dot_product_attention(
+                                                            encoder_query, 
+                                                            encoder_key, 
+                                                            encoder_value, 
+                                                            dropout_p=0.0, 
+                                                            is_causal=False
+                                                            )
 
     # transpose back
     encoder_hidden_states = encoder_hidden_states.transpose(1, 2)  # [B, S, H, D]
@@ -227,7 +234,14 @@ def sequence_parallel_attention_vision(q, k, v,
     key = torch.cat([encoder_key, key], dim=2)
     value = torch.cat([encoder_value, value], dim=2)
 
-    hidden_states = F.scaled_dot_product_attention(query, key, value, dropout_p=0.0, is_causal=False)
+    infer_state = get_infer_state()
+    enable_sageattn = (infer_state.enable_sageattn and 
+                        block_idx in infer_state.sage_blocks_range)
+    if enable_sageattn:
+        from sageattention import sageattn
+        hidden_states = sageattn(query, key, value, tensor_layout="HND", is_causal=False)
+    else:
+        hidden_states = F.scaled_dot_product_attention(query, key, value, dropout_p=0.0, is_causal=False)
 
     # transpose back
     hidden_states = hidden_states.transpose(1, 2)  # [B, S, H, D]
