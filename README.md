@@ -166,7 +166,7 @@ Try our **online demo** without installation: https://3d.hunyuan.tencent.com/sce
 
 | Model |  Description | Download |
 |-------|--------------|----------|
-| HY-World1.5-Bidirectional-480P-I2V | Bidirectional attention model with full context awareness. | [Link](https://huggingface.co/tencent/HY-WorldPlay/tree/main/bidirectional_model) |
+| HY-World1.5-Bidirectional-480P-I2V | Bidirectional attention model with reconstituted context memory. | [Link](https://huggingface.co/tencent/HY-WorldPlay/tree/main/bidirectional_model) |
 | HY-World1.5-Autoregressive-480P-I2V | Autoregressive model with reconstituted context memory. | [Link](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_model) |
 | HY-World1.5-Autoregressive-480P-I2V-rl | Autoregressive model with RL post-training. | To be released |
 | HY-World1.5-Autoregressive-480P-I2V-distill | Distilled autoregressive model optimized for fast inference (4 steps). | [Link](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_distilled_action_model) |   
@@ -194,13 +194,13 @@ AR_DISTILL_ACTION_MODEL_PATH=<path_printed_by_download_script>/ar_distilled_acti
 
 In `run.sh`, you can configure:
 
-| Parameter | Description |
-|-----------|-------------|
-| `PROMPT` | Text description of the scene |
-| `IMAGE_PATH` | Input image path (required for I2V) |
-| `NUM_FRAMES` | Number of frames to generate (default: 125) |
-| `N_INFERENCE_GPU` | Number of GPUs for parallel inference |
-| `POSE` | Camera trajectory: pose string (e.g., `'w-3, right-0.5'`) or JSON file path |
+| Parameter | Description                                                                                         |
+|-----------|-----------------------------------------------------------------------------------------------------|
+| `PROMPT` | Text description of the scene                                                                       |
+| `IMAGE_PATH` | Input image path (required for I2V)                                                                 |
+| `NUM_FRAMES` | Number of frames to generate (default: 125)                                                         |
+| `N_INFERENCE_GPU` | Number of GPUs for parallel inference                                                               |
+| `POSE` | Camera trajectory: pose string (e.g., `w-31` means generating `[1 + 31]` latents) or JSON file path |
 
 ### Model Selection
 
@@ -230,24 +230,24 @@ You have two options to control camera trajectories:
 Use intuitive pose strings by setting the `POSE` variable in `run.sh`:
 
 ```bash
-POSE='w-3, right-0.5, d-4'
+POSE='w-31'
 ```
 
 **Supported Actions:**
 - **Movement**: `w` (forward), `s` (backward), `a` (left), `d` (right)
 - **Rotation**: `up` (pitch up), `down` (pitch down), `left` (yaw left), `right` (yaw right)
-- **Format**: `action-duration` where duration is in seconds
+- **Format**: `action-duration` where duration specifies the number of latents corresponding to the given action.
 
 **Examples:**
 ```bash
-# Move forward for 6 seconds (default)
-POSE='w-6'
+# Move forward for 31 latents (default). Generate [1 + 31] latents
+POSE='w-31'
 
-# Move forward 3s, rotate right 0.5s, move right 4s
-POSE='w-3, right-0.5, d-4'
+# Move forward 3 latents, rotate right 1 latents, move right 4 latents. Generate [1 + 3 + 1 + 4] latents
+POSE='w-3, right-1, d-4'
 
-# Complex trajectory
-POSE='w-2, right-1, d-1.5, up-0.5'
+# Complex trajectory. Generate [1 + 2 + 1 + 2 + 4] latents
+POSE='w-2, right-1, d-2, up-4'
 ```
 
 #### Option 2: Custom JSON Files

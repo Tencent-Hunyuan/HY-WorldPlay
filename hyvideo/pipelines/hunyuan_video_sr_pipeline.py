@@ -382,7 +382,8 @@ class HunyuanVideo_1_5_SR_Pipeline(HunyuanVideo_1_5_Pipeline):
 
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
 
-                t_expand = t.repeat(latent_model_input.shape[0])
+                t_expand = t.repeat(latent_model_input.shape[0] * latent_model_input.shape[2])
+                t_txt_expand = t.repeat(latent_model_input.shape[0])
                 if not self.use_meanflow:
                     timesteps_r = None
                 else:
@@ -405,12 +406,15 @@ class HunyuanVideo_1_5_SR_Pipeline(HunyuanVideo_1_5_Pipeline):
 
                 with torch.autocast(device_type="cuda", dtype=self.target_dtype, enabled=self.autocast_enabled):
                     output = self.transformer(
-                        latent_model_input,
-                        t_expand,
-                        t_expand,
-                        prompt_embeds,
-                        None,
-                        prompt_mask,
+                        bi_inference=True,
+                        ar_txt_inference=False,
+                        ar_vision_inference=False,
+                        hidden_states=latent_model_input,
+                        timestep=t_expand,
+                        timestep_txt=t_txt_expand,
+                        text_states=prompt_embeds,
+                        text_states_2=None,
+                        encoder_attention_mask=prompt_mask,
                         timestep_r=timesteps_r,
                         vision_states=vision_states,
                         mask_type=task_type,
@@ -458,9 +462,7 @@ class HunyuanVideo_1_5_SR_Pipeline(HunyuanVideo_1_5_Pipeline):
                 self.vae.enable_tile_parallelism()
             with (torch.autocast(device_type="cuda", dtype=self.vae_dtype, enabled=self.vae_autocast_enabled),
                   auto_offload_model(self.vae, self.execution_device, enabled=self.enable_offloading)):
-                self.vae.enable_tiling()
                 video_frames = self.vae.decode(latents, return_dict=False, generator=generator)[0]
-                self.vae.disable_tiling()
 
             if video_frames is not None:
                 video_frames = (video_frames / 2 + 0.5).clamp(0, 1).cpu().float()

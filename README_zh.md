@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/643a33a4-b677-4eff-ad1d-32205c594274
 
 | 模型 | 描述 | 下载 |
 |------|------|------|
-| HY-World1.5-Bidirectional-480P-I2V | 双向注意力模型，具有跨所有帧的完整上下文感知能力 | [下载地址](https://huggingface.co/tencent/HY-WorldPlay/tree/main/bidirectional_model) |
+| HY-World1.5-Bidirectional-480P-I2V | 双向注意力模型，具有重构上下文记忆机制 | [下载地址](https://huggingface.co/tencent/HY-WorldPlay/tree/main/bidirectional_model) |
 | HY-World1.5-Autoregressive-480P-I2V | 自回归模型，具有重构上下文记忆机制和单向的注意力机制以实现长期几何一致性 | [下载地址](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_model) |
 | HY-World1.5-Autoregressive-480P-I2V-distill | 自回归模型的蒸馏版，针对推理优化（4步） | [下载地址](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_distilled_action_model) |
 
@@ -140,13 +140,13 @@ AR_DISTILL_ACTION_MODEL_PATH=<download_script打印的路径>/ar_distilled_actio
 
 在 `run.sh` 中，您可以配置：
 
-| 参数 | 描述 |
-|------|------|
-| `PROMPT` | 场景的文本描述 |
-| `IMAGE_PATH` | 输入图像路径（I2V 必需） |
-| `NUM_FRAMES` | 要生成的帧数（默认：125） |
-| `N_INFERENCE_GPU` | 并行推理的 GPU 数量 |
-| `POSE` | 相机轨迹：姿态字符串（如 `'w-3, right-0.5'`）或 JSON 文件路径 |
+| 参数 | 描述                                                   |
+|------|------------------------------------------------------|
+| `PROMPT` | 场景的文本描述                                              |
+| `IMAGE_PATH` | 输入图像路径（I2V 必需）                                       |
+| `NUM_FRAMES` | 要生成的帧数（默认：125）                                       |
+| `N_INFERENCE_GPU` | 并行推理的 GPU 数量                                         |
+| `POSE` | 相机轨迹：姿态字符串（如 `w-31`代表生成`[1 + 31]`latents）或 JSON 文件路径 |
 
 ### 模型选择
 
@@ -176,24 +176,24 @@ AR_DISTILL_ACTION_MODEL_PATH=<download_script打印的路径>/ar_distilled_actio
 在 `run.sh` 中设置 `POSE` 变量使用直观的姿态字符串：
 
 ```bash
-POSE='w-3, right-0.5, d-4'
+POSE='w-31'
 ```
 
 **支持的动作：**
 - **移动**: `w` (前进), `s` (后退), `a` (左移), `d` (右移)
 - **旋转**: `up` (俯仰向上), `down` (俯仰向下), `left` (偏航向左), `right` (偏航向右)
-- **格式**: `动作-时长`，时长单位为秒
+- **格式**: `动作-时长`，时长代表动作对应的latents数量
 
 **示例：**
 ```bash
-# 前进 6 秒（默认值）
-POSE='w-6'
+# 前进31个latents (默认), 总共生成[1 + 31]个latents
+POSE='w-31'
 
-# 前进 3 秒，右转 0.5 秒，右移 4 秒
-POSE='w-3, right-0.5, d-4'
+# 前进3个latents, 向右旋转1个latent, 向右走4个latents, 总共生成[1 + 3 + 1 + 4]个latents
+POSE='w-3, right-1, d-4'
 
-# 复杂轨迹
-POSE='w-2, right-1, d-1.5, up-0.5'
+# 复杂轨迹, 总共生成[1 + 2 + 1 + 2 + 4]个latents
+POSE='w-2, right-1, d-2, up-4'
 ```
 
 #### 方式 2：自定义 JSON 文件

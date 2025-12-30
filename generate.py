@@ -54,7 +54,7 @@ def one_hot_to_one_dimension(one_hot):
     y = torch.tensor([mapping[tuple(row.tolist())] for row in one_hot])
     return y
 
-def parse_pose_string(pose_string, fps=6):
+def parse_pose_string(pose_string):
     """
     Parse pose string to motions list.
     Format: "w-3, right-0.5, d-4"
@@ -66,11 +66,10 @@ def parse_pose_string(pose_string, fps=6):
     - down: pitch down rotation
     - left: yaw left rotation
     - right: yaw right rotation
-    - number after dash: duration in seconds
+    - number after dash: duration in latents
 
     Args:
         pose_string: str, comma-separated pose commands
-        fps: int, frames per second (default 24)
 
     Returns:
         list of dict: motions for generate_camera_trajectory_local
@@ -97,7 +96,7 @@ def parse_pose_string(pose_string, fps=6):
         except ValueError:
             raise ValueError(f"Invalid duration in command: {cmd}")
 
-        num_frames = int(duration * fps)
+        num_frames = int(duration)
 
         # Parse action and create motion dict
         if action == 'w':
@@ -163,7 +162,7 @@ def pose_string_to_json(pose_string):
 
     return pose_json
 
-def pose_to_input(pose_data, latent_chunk_num, tps=False):
+def pose_to_input(pose_data, latent_num, tps=False):
     """
     Convert pose data to input tensors.
 
@@ -172,7 +171,7 @@ def pose_to_input(pose_data, latent_chunk_num, tps=False):
             - If str ending with '.json': path to JSON file
             - If str: pose string (e.g., "w-3, right-0.5, d-4")
             - If dict: pose JSON data
-        latent_chunk_num: int, number of latent chunks
+        latent_num: int, number of latents
         tps: bool, third person mode
 
     Returns:
@@ -192,9 +191,13 @@ def pose_to_input(pose_data, latent_chunk_num, tps=False):
         raise ValueError(f"Invalid pose_data type: {type(pose_data)}. Expected str or dict.")
 
     pose_keys = list(pose_json.keys())
+    latent_num_from_pose = len(pose_keys)
+    assert latent_num_from_pose == latent_num, (f"pose corresponds to {latent_num_from_pose * 4 - 3} frames, num_frames "
+                                                f"must be set to {latent_num_from_pose * 4 - 3} to ensure alignment.")
+
     intrinsic_list = []
     w2c_list = []
-    for i in range(latent_chunk_num):
+    for i in range(latent_num):
         t_key = pose_keys[i]
         c2w = np.array(pose_json[t_key]["extrinsic"])
         w2c = np.linalg.inv(c2w)
