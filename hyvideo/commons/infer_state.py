@@ -28,6 +28,9 @@ class InferState:
     quant_type: str = "fp8-per-block"  # fp8 quantization type
     include_patterns: list = field(default_factory=lambda: ["double_blocks"])  # include patterns for fp8 gemm
 
+    # vae related
+    use_vae_parallel: bool = False  # whether to use vae parallel
+
 __infer_state = None
 
 def parse_range(value):
@@ -58,6 +61,9 @@ def initialize_infer_state(args):
         use_fp8_gemm = args.use_fp8_gemm,
         quant_type = args.quant_type,
         include_patterns = include_patterns,
+
+        # vae related
+        use_vae_parallel = args.use_vae_parallel,
     )
     return __infer_state
 

@@ -1637,6 +1637,10 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
             else:
                 latents = latents / self.vae.config.scaling_factor
 
+            if get_infer_state() and get_infer_state().use_vae_parallel:
+                self.vae.enable_spatial_tiling()
+                self.vae.enable_tile_parallelism()
+
 
             if return_pre_sr_video or not enable_sr:
                 with (torch.autocast(device_type="cuda", dtype=self.vae_dtype, enabled=self.vae_autocast_enabled),

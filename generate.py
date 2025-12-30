@@ -843,7 +843,12 @@ def main():
         '--sage_blocks_range', type=str, default="0-53",
         help='Sageattn blocks range (e.g., 0-5 or 0,1,2,3,4,5)'
     )
-
+    parser.add_argument(
+        '--use_vae_parallel', type=str_to_bool, nargs='?', const=True, default=False,
+        help='Enable vae parallel (default: false). '
+             'Use --use_vae_parallel or --use_vae_parallel true/1 to enable, '
+             '--use_vae_parallel false/0 to disable'
+    )
     # fp8 gemm related
     parser.add_argument(
         '--use_fp8_gemm', type=str_to_bool, nargs='?', const=True, default=False,

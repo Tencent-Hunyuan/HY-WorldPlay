@@ -383,6 +383,28 @@ class Upsample(nn.Module):
                 # compute the shortcut part
                 shortcut = rearrange(x, "b (r2 r3 c) f h w -> b c f (h r2) (w r3)", r2=2, r3=2)
                 shortcut = shortcut.repeat_interleave(repeats=self.repeats // 2, dim=1)
+            elif feat_cache is None and x.shape[2] > 1:
+                # Multi-frame input without cache: first frame only spatial upsample, rest frames do spatio-temporal upsample
+                # Separate first frame and remaining frames
+                h_first = h[:, :, :1, :, :]  # first frame
+                h_rest = h[:, :, 1:, :, :]   # remaining frames
+                x_first = x[:, :, :1, :, :]
+                x_rest = x[:, :, 1:, :, :]
+                
+                # First frame: only spatial upsample
+                h_first = rearrange(h_first, "b (r2 r3 c) f h w -> b c f (h r2) (w r3)", r2=2, r3=2)
+                h_first = h_first[:, : h_first.shape[1] // 2]
+                shortcut_first = rearrange(x_first, "b (r2 r3 c) f h w -> b c f (h r2) (w r3)", r2=2, r3=2)
+                shortcut_first = shortcut_first.repeat_interleave(repeats=self.repeats // 2, dim=1)
+                out_first = h_first + shortcut_first
+                
+                # Remaining frames: spatio-temporal upsample
+                h_rest = rearrange(h_rest, "b (r1 r2 r3 c) f h w -> b c (f r1) (h r2) (w r3)", r1=r1, r2=2, r3=2)
+                shortcut_rest = rearrange(x_rest, "b (r1 r2 r3 c) f h w -> b c (f r1) (h r2) (w r3)", r1=r1, r2=2, r3=2)
+                shortcut_rest = shortcut_rest.repeat_interleave(repeats=self.repeats, dim=1)
+                out_rest = h_rest + shortcut_rest
+
+                return torch.cat([out_first, out_rest], dim=2)
             else:
                 h = rearrange(h, "b (r1 r2 r3 c) f h w -> b c (f r1) (h r2) (w r3)", r1=r1, r2=2, r3=2)
                 # compute the shortcut part
@@ -870,8 +892,9 @@ class AutoencoderKLConv3D(ModelMixin, ConfigMixin):
             decoded_metas.append(torch.tensor([ri, rj, pad_w, pad_h], device=z.device, dtype=torch.int64))
         
         while len(decoded_tiles) < tiles_per_rank:
+            T_out = decoded_tiles[0].shape[2] if len(decoded_tiles) > 0 else (T-1)*self.ffactor_temporal+1
             zero_tile = torch.zeros(
-                [1, 3, (T - 1) * self.ffactor_temporal + 1, self.tile_sample_min_size, self.tile_sample_min_size],
+                [1, 3, T_out, self.tile_sample_min_size, self.tile_sample_min_size],
                 device=dec.device,
                 dtype=dec.dtype
             )
@@ -891,6 +914,7 @@ class AutoencoderKLConv3D(ModelMixin, ConfigMixin):
 
         dist.all_gather(tiles_gather_list, decoded_tiles, group=get_parallel_state().sp_group)
         dist.all_gather(metas_gather_list, decoded_metas, group=get_parallel_state().sp_group)
+        dist.barrier()
 
         if rank != 0:
             return torch.empty(0, device=z.device)
