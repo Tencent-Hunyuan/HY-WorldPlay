@@ -230,7 +230,7 @@ You have two options to control camera trajectories:
 Use intuitive pose strings by setting the `POSE` variable in `run.sh`:
 
 ```bash
-POSE='w-3, right-0.5, d-4'
+POSE='w-31'
 ```
 
 **Supported Actions:**
@@ -240,13 +240,13 @@ POSE='w-3, right-0.5, d-4'
 
 **Examples:**
 ```bash
-# Move forward for 31 latents (default)
+# Move forward for 31 latents (default). Generate [1 + 31]个latents
 POSE='w-31'
 
-# Move forward 3 latents, rotate right 1 latents, move right 4 latents
+# Move forward 3 latents, rotate right 1 latents, move right 4 latents. Generate [1 + 3 + 1 + 4]个latents
 POSE='w-3, right-1, d-4'
 
-# Complex trajectory
+# Complex trajectory. Generate [1 + 2 + 1 + 2 + 4]个latents
 POSE='w-2, right-1, d-2, up-4'
 ```
 

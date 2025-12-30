@@ -176,7 +176,7 @@ AR_DISTILL_ACTION_MODEL_PATH=<download_script打印的路径>/ar_distilled_actio
 在 `run.sh` 中设置 `POSE` 变量使用直观的姿态字符串：
 
 ```bash
-POSE='w-3, right-0.5, d-4'
+POSE='w-31'
 ```
 
 **支持的动作：**
@@ -186,13 +186,13 @@ POSE='w-3, right-0.5, d-4'
 
 **示例：**
 ```bash
-# 前进31个latents (默认)
+# 前进31个latents (默认), 总共生成[1 + 31]个latents
 POSE='w-31'
 
-# 前进3个latents, 向右旋转1个latent, 向右走4个latents
+# 前进3个latents, 向右旋转1个latent, 向右走4个latents, 总共生成[1 + 3 + 1 + 4]个latents
 POSE='w-3, right-1, d-4'
 
-# 复杂轨迹
+# 复杂轨迹, 总共生成[1 + 2 + 1 + 2 + 4]个latents
 POSE='w-2, right-1, d-2, up-4'
 ```
 
