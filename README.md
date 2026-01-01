@@ -119,14 +119,41 @@ conda activate worldplay
 pip install -r requirements.txt
 ```
 
-### 2. Install Flash Attention (Optional but Recommended)
-Install Flash Attention for faster inference and reduced GPU memory consumption:
-```bash
-pip install flash-attn --no-build-isolation
-```
-Detailed instructions: [Flash Attention](https://github.com/Dao-AILab/flash-attention)
+### 2. Install Attention Libraries (Optional but Recommended)
+* Flash Attention: 
+  Install Flash Attention for faster inference and reduced GPU memory consumption:
+  ```bash
+  pip install flash-attn --no-build-isolation
+  ```
+  Detailed instructions: [Flash Attention](https://github.com/Dao-AILab/flash-attention)
 
-### 3. Download All Required Models
+
+* SageAttention: 
+  To enable SageAttention for faster inference, you need to install it by the following command:
+  ```bash
+  git clone https://github.com/cooper1637/SageAttention.git
+  cd SageAttention 
+  export EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32 # Optional
+  python3 setup.py install
+  ```
+
+### 3. Install AngelSlim and DeepGEMM
+* AngelSlim: 
+  Install AngelSlim to quantize transformer.
+  ```bash
+  pip install angelslim==0.2.2
+  ```
+
+* DeepGEMM: 
+  To enable fp8 gemm for transformer, you need to install it by the following command:
+  ```bash
+  git clone --recursive git@github.com:deepseek-ai/DeepGEMM.git
+  cd DeepGEMM
+  ./develop.sh
+  ./install.sh
+  ```
+
+### 4. Download All Required Models
 
 We provide a download script that automatically downloads all required models:
 
@@ -315,7 +342,6 @@ https://github.com/user-attachments/assets/531bf0ad-1fca-4d76-bb65-84701368926d
 https://github.com/user-attachments/assets/f165f409-5a74-4e19-a32c-fc98d92259e1
 
 ## 📝 TODO
-- [ ] Acceleration & Quantization
 - [ ] Open-source training code
 
 ## 📚 Citation

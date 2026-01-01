@@ -264,7 +264,7 @@ def pose_to_input(pose_data, latent_num, tps=False):
     rotate_one_label = one_hot_to_one_dimension(rotate_one_hot)
     action_one_label = trans_one_label * 9 + rotate_one_label
 
-    return torch.tensor(w2c_list), torch.tensor(intrinsic_list), action_one_label
+    return torch.as_tensor(w2c_list), torch.as_tensor(intrinsic_list), action_one_label
 
 def save_video(video, path):
     if video.ndim == 5:
@@ -831,6 +831,38 @@ def main():
         help='Add keyboard overlay to generated video (default: false). '
              'Only works with pose string input, not JSON files. '
              'Use --with-ui or --with-ui true/1 to enable, --with-ui false/0 to disable'
+    )
+
+    parser.add_argument(
+        '--use_sageattn', type=str_to_bool, nargs='?', const=True, default=False,
+        help='Enable sageattn (default: false). '
+             'Use --use_sageattn or --use_sageattn true/1 to enable, '
+             '--use_sageattn false/0 to disable'
+    )
+    parser.add_argument(
+        '--sage_blocks_range', type=str, default="0-53",
+        help='Sageattn blocks range (e.g., 0-5 or 0,1,2,3,4,5)'
+    )
+    parser.add_argument(
+        '--use_vae_parallel', type=str_to_bool, nargs='?', const=True, default=False,
+        help='Enable vae parallel (default: false). '
+             'Use --use_vae_parallel or --use_vae_parallel true/1 to enable, '
+             '--use_vae_parallel false/0 to disable'
+    )
+    # fp8 gemm related
+    parser.add_argument(
+        '--use_fp8_gemm', type=str_to_bool, nargs='?', const=True, default=False,
+        help='Enable fp8 gemm for transformer (default: false). '
+             'Use --use_fp8_gemm or --use_fp8_gemm true/1 to enable, '
+             '--use_fp8_gemm false/0 to disable'
+    )
+    parser.add_argument(
+        '--quant_type', type=str, default="fp8-per-block",
+        help='Quantization type for fp8 gemm (e.g., fp8-per-tensor-weight-only, fp8-per-tensor, fp8-per-block)'
+    )
+    parser.add_argument(
+        '--include_patterns', type=str, default="double_blocks",
+        help='Include patterns for fp8 gemm (default: double_blocks)'
     )
 
     args = parser.parse_args()
