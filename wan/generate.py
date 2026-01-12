@@ -106,11 +106,9 @@ class WanRunner:
 
     def _init_models(self):
         # Load VAE for encoding/decoding video frames
-        # Use low_cpu_mem_usage to avoid loading entire model to RAM first
         self.vae = (
             MyVAE.from_pretrained(
-                self.model_id, subfolder="vae", torch_dtype=torch.bfloat16,
-                low_cpu_mem_usage=True, device_map=self.device
+                self.model_id, subfolder="vae", torch_dtype=torch.bfloat16
             )
             .eval()
             .requires_grad_(False)
@@ -118,8 +116,7 @@ class WanRunner:
 
         # Load main diffusion pipeline - load directly to GPU
         self.pipe = WanPipeline.from_pretrained(
-            self.model_id, vae=self.vae, torch_dtype=torch.bfloat16,
-            low_cpu_mem_usage=True
+            self.model_id, vae=self.vae, torch_dtype=torch.bfloat16
         )
         # Move pipeline to GPU immediately after loading each component
         self.pipe.to(self.device)
@@ -135,13 +132,10 @@ class WanRunner:
         self.pipe.dist_vae = dist_vae
 
         # Load autoregressive transformer with action conditioning
-        # Use low_cpu_mem_usage to load directly to GPU piece by piece
         transformer_ar_action = WanTransformer3DModel.from_pretrained(
             self.ar_model_path,
             use_safetensors=True,
             local_files_only=True,
-            low_cpu_mem_usage=True,
-            device_map=self.device,
             torch_dtype=torch.bfloat16,
         )
         # Add action parameters to enable camera control
@@ -198,7 +192,7 @@ class WanRunner:
             width=width,
             num_frames=num_frames,
             num_inference_steps=num_inference_steps,
-            guidance_scale=5.0,  # Higher = more prompt adherence + dynamics
+            guidance_scale=1.0,
             few_step=True,
             first_chunk_size=CHUNK_SIZE,
             return_dict=False,
