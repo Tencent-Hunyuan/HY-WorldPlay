@@ -102,7 +102,7 @@ def maybe_load_fsdp_model(
     # with set_default_dtype(param_dtype), torch.device("meta"):
     with set_default_dtype(param_dtype):
         logger.info(f"loading from: {load_from_dir}")
-        logger.info(f"model:", model_cls)
+        logger.info(f"model: {model_cls}")
         # model = model_cls(**init_params)
         model = model_cls.from_pretrained(
             load_from_dir, local_attn_size=-1, sink_size=0)
