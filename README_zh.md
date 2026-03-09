@@ -32,6 +32,7 @@
 https://github.com/user-attachments/assets/19a8ef47-3d1a-4c29-a80f-500b342bfc80
 
 ## 🔥 新闻
+- 2026年3月8日: 🚀 我们发布了强化学习后训练框架 [WorldCompass](worldcompass/README.md)！
 - 2026年1月6日: 🚀 我们开源了WorldPlay-8B模型（基于HunyuanVideo）的训练代码，让社区能够训练和微调自己的世界模型！
 - 2026年1月6日: 🎯 我们开源了WorldPlay-5B模型（基于WAN），部署需要显存更少！（但控制和记忆能力有退化）
 - 2026年1月3日: ⚡ 我们更新了推理代码的量化及加速版本，推理速度更快！
@@ -123,7 +124,7 @@ https://github.com/user-attachments/assets/643a33a4-b677-4eff-ad1d-32205c594274
 |------|------|------|
 | HY-World1.5-Bidirectional-480P-I2V | 双向注意力模型，具有重构上下文记忆机制 | [下载地址](https://huggingface.co/tencent/HY-WorldPlay/tree/main/bidirectional_model) |
 | HY-World1.5-Autoregressive-480P-I2V | 自回归模型，具有重构上下文记忆机制和单向的注意力机制以实现长期几何一致性 | [下载地址](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_model) |
-| HY-World1.5-Autoregressive-480P-I2V-rl | 经过强化学习的自回归模型. | To be released |
+| HY-World1.5-Autoregressive-480P-I2V-rl | 经过强化学习的自回归模型. | [下载地址](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_rl_model) |
 | HY-World1.5-Autoregressive-480P-I2V-distill | 自回归模型的蒸馏版，针对推理优化（4步） | [下载地址](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_distilled_action_model) |
 | HY-World1.5-Autoregressive-480P-I2V-rl-distill |  经过强化学习的自回归模型的蒸馏版. | To be released | 
 
@@ -146,6 +147,7 @@ https://github.com/user-attachments/assets/643a33a4-b677-4eff-ad1d-32205c594274
 # 这些路径由 download_models.py 在下载完成后打印
 MODEL_PATH=<download_script打印的路径>
 AR_ACTION_MODEL_PATH=<download_script打印的路径>/ar_model
+AR_RL_ACTION_MODEL_PATH=<download_script打印的路径>/ar_rl_model
 BI_ACTION_MODEL_PATH=<download_script打印的路径>/bidirectional_model
 AR_DISTILL_ACTION_MODEL_PATH=<download_script打印的路径>/ar_distilled_action_model
 ```
@@ -176,7 +178,12 @@ AR_DISTILL_ACTION_MODEL_PATH=<download_script打印的路径>/ar_distilled_actio
    --action_ckpt $AR_ACTION_MODEL_PATH --model_type 'ar'
    ```
 
-3. **蒸馏模型**：
+3. **自回归+强化学习模型**：
+   ```bash
+   --action_ckpt $AR_RL_ACTION_MODEL_PATH --model_type 'ar'
+   ```
+
+4. **蒸馏模型**：
    ```bash
    --action_ckpt $AR_DISTILL_ACTION_MODEL_PATH --few_step true --num_inference_steps 4 --model_type 'ar'
    ```
@@ -285,7 +292,7 @@ https://github.com/user-attachments/assets/531bf0ad-1fca-4d76-bb65-84701368926d
 https://github.com/user-attachments/assets/f165f409-5a74-4e19-a32c-fc98d92259e1
 
 ## 📝 待办事项
-
+- [x] 开源WorldCompass后训练框架
 - [x] 开源训练代码
 - [x] 开源量化及工程优化的推理代码
 - [x] 开源轻量级模型
@@ -298,6 +305,13 @@ https://github.com/user-attachments/assets/f165f409-5a74-4e19-a32c-fc98d92259e1
   author={Team HunyuanWorld},
   journal={arXiv preprint},
   year={2025}
+}
+
+@article{wang2026worldcompass,
+  title={WorldCompass: Reinforcement Learning for Long-Horizon World Models},
+  author={Wang, Zehan and Wang, Tengfei and Zhang, Haiyu and Zuo, Xuhui and Wu, Junta and Wang, Haoyuan and Sun, Wenqiang and Wang, Zhenwei and Cao, Chenjie and Zhao, Hengshuang and others},
+  journal={arXiv preprint},
+  year={2026}
 }
 
 @article{worldplay2025,

@@ -36,6 +36,7 @@
 https://github.com/user-attachments/assets/9fd12b40-41ab-4201-8667-8b333db1123d
 
 ## 🔥 News
+- March 8, 2026: 🚀 We release the RL post-training framework [WorldCompass](worldcompass/README.md) for WorldPlay-8B model (based on HY Video)!
 - January 6, 2026: 🚀 We release the training code for WorldPlay-8B model (based on HY Video), enabling the community to train and fine-tune their own world models!
 - January 6, 2026: 🎯 We open-source WorldPlay-5B model (based on WAN), a new lightweight model that fits into small-VRAM GPUs (but with compromised quality)!
 - January 3, 2026: ⚡ We update the inference code with quantization and engineering optimization for even faster inference speeds!
@@ -204,7 +205,7 @@ Try our **online demo** without installation: https://3d.hunyuan.tencent.com/sce
 |-------|--------------|----------|
 | HY-World1.5-Bidirectional-480P-I2V | Bidirectional attention model with reconstituted context memory. | [Link](https://huggingface.co/tencent/HY-WorldPlay/tree/main/bidirectional_model) |
 | HY-World1.5-Autoregressive-480P-I2V | Autoregressive model with reconstituted context memory. | [Link](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_model) |
-| HY-World1.5-Autoregressive-480P-I2V-rl | Autoregressive model with RL post-training. | To be released |
+| HY-World1.5-Autoregressive-480P-I2V-rl | Autoregressive model with RL post-training. | [Link](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_rl_model) |
 | HY-World1.5-Autoregressive-480P-I2V-distill | Distilled autoregressive model optimized for fast inference (4 steps). | [Link](https://huggingface.co/tencent/HY-WorldPlay/tree/main/ar_distilled_action_model) |   
 | HY-World1.5-Autoregressive-480P-I2V-rl-distill | Distilled autoregressive model with RL post-training. | To be released | 
 
@@ -228,8 +229,10 @@ After running `download_models.py`, update `run.sh` with the printed model paths
 # These paths are printed by download_models.py after download completes
 MODEL_PATH=<path_printed_by_download_script>
 AR_ACTION_MODEL_PATH=<path_printed_by_download_script>/ar_model
+AR_RL_ACTION_MODEL_PATH=<path_printed_by_download_script>/ar_rl_model
 BI_ACTION_MODEL_PATH=<path_printed_by_download_script>/bidirectional_model
 AR_DISTILL_ACTION_MODEL_PATH=<path_printed_by_download_script>/ar_distilled_action_model
+
 ```
 
 #### Configuration Options
@@ -257,8 +260,13 @@ Uncomment one of the three inference commands in `run.sh`:
    ```bash
    --action_ckpt $AR_ACTION_MODEL_PATH --model_type 'ar'
    ```
+  
+3. **Autoregressive + RL Model**:
+   ```bash
+   --action_ckpt $AR_RL_ACTION_MODEL_PATH --model_type 'ar'
+   ```
 
-3. **Distilled Model**:
+4. **Distilled Model**:
    ```bash
    --action_ckpt $AR_DISTILL_ACTION_MODEL_PATH --few_step true --num_inference_steps 4 --model_type 'ar'
    ```
@@ -366,6 +374,7 @@ https://github.com/user-attachments/assets/b9060cd1-a442-4d67-9f16-daa7a2e6f2c8
 https://github.com/user-attachments/assets/b883a748-cc77-480f-b6a0-e94b6ce9efea
 
 ## 📝 TODO
+- [x] Open-source WorldCompass post-training framework
 - [x] Open-source training code
 - [x] Open-source quantized & accelerated inference
 - [x] Open-source Lite model
@@ -378,6 +387,13 @@ https://github.com/user-attachments/assets/b883a748-cc77-480f-b6a0-e94b6ce9efea
   author={Team HunyuanWorld},
   journal={arXiv preprint},
   year={2025}
+}
+
+@article{wang2026worldcompass,
+  title={WorldCompass: Reinforcement Learning for Long-Horizon World Models},
+  author={Wang, Zehan and Wang, Tengfei and Zhang, Haiyu and Zuo, Xuhui and Wu, Junta and Wang, Haoyuan and Sun, Wenqiang and Wang, Zhenwei and Cao, Chenjie and Zhao, Hengshuang and others},
+  journal={arXiv preprint},
+  year={2026}
 }
 
 @article{worldplay2025,
