@@ -765,6 +765,7 @@ def generate_video(args):
         model_type=args.model_type,
         user_height=args.height,
         user_width=args.width,
+        transformer_resident_ar_rollout=args.transformer_resident_ar_rollout,
         **extra_kwargs,
     )
 
@@ -1041,6 +1042,16 @@ def main():
         type=str,
         default="double_blocks",
         help="Include patterns for fp8 gemm (default: double_blocks)",
+    )
+    parser.add_argument(
+        "--transformer_resident_ar_rollout",
+        type=str_to_bool,
+        nargs="?",
+        const=True,
+        default=False,
+        help="Keep transformer on GPU for entire AR rollout instead of per-chunk offloading (default: false). "
+        "Reduces inference time without increasing peak VRAM. Only affects AR model_type with offloading enabled. "
+        "Use --transformer_resident_ar_rollout or --transformer_resident_ar_rollout true to enable.",
     )
 
     args = parser.parse_args()

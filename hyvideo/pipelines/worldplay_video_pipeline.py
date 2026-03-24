@@ -1012,6 +1012,47 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
         Ks,
         action,
         device,
+        transformer_resident=False,
+    ):
+        # When transformer_resident is True, keep the transformer on GPU for the
+        # entire AR rollout instead of loading/offloading it per chunk.  This does
+        # not increase peak VRAM (other large modules are already offloaded before
+        # ar_rollout is called) but removes per-chunk transfer overhead.
+        if transformer_resident and self.enable_offloading:
+            with auto_offload_model(
+                self.transformer, self.execution_device, enabled=True
+            ):
+                orig = self.enable_offloading
+                self.enable_offloading = False
+                try:
+                    return self._ar_rollout_inner(
+                        latents, timesteps, prompt_embeds, prompt_mask,
+                        vision_states, cond_latents, task_type, extra_kwargs,
+                        viewmats, Ks, action, device,
+                    )
+                finally:
+                    self.enable_offloading = orig
+        else:
+            return self._ar_rollout_inner(
+                latents, timesteps, prompt_embeds, prompt_mask,
+                vision_states, cond_latents, task_type, extra_kwargs,
+                viewmats, Ks, action, device,
+            )
+
+    def _ar_rollout_inner(
+        self,
+        latents,
+        timesteps,
+        prompt_embeds,
+        prompt_mask,
+        vision_states,
+        cond_latents,
+        task_type,
+        extra_kwargs,
+        viewmats,
+        Ks,
+        action,
+        device,
     ):
         self.init_kv_cache()
         positive_idx = 1 if self.do_classifier_free_guidance else 0
@@ -1117,30 +1158,38 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                     device=device,
                     dtype=timesteps.dtype,
                 )
-
-                self.scheduler.set_timesteps(self.num_inference_steps, device=device)
-
-            start_idx = chunk_i * self.chunk_latent_frames
-            end_idx = chunk_i * self.chunk_latent_frames + self.chunk_latent_frames
-
-            #   load→recache→offload→load→denoise→offload  （previous）
-            #   load→recache→denoise→offload               （current）
-            with (
-                self.progress_bar(total=self.num_inference_steps) as progress_bar,
-                auto_offload_model(
-                    self.transformer,
-                    self.execution_device,
-                    enabled=self.enable_offloading,
-                ),
-            ):
-                # ── recache（仅 chunk_i > 0）──────────────────────────────────────
-                if chunk_i > 0:
-                    with torch.autocast(
+                # compute kv cache
+                with (
+                    torch.autocast(
                         device_type="cuda",
                         dtype=self.target_dtype,
                         enabled=self.autocast_enabled,
-                    ):
-                        self._kv_cache = self.transformer(
+                    ),
+                    auto_offload_model(
+                        self.transformer,
+                        self.execution_device,
+                        enabled=self.enable_offloading,
+                    ),
+                ):
+                    self._kv_cache = self.transformer(
+                        bi_inference=False,
+                        ar_txt_inference=False,
+                        ar_vision_inference=True,
+                        hidden_states=context_latents_input,
+                        timestep=context_timestep,
+                        timestep_r=None,
+                        mask_type=task_type,
+                        return_dict=False,
+                        viewmats=context_viewmats.to(self.target_dtype),
+                        Ks=context_Ks.to(self.target_dtype),
+                        action=context_action.to(self.target_dtype),
+                        kv_cache=self._kv_cache,
+                        cache_vision=True,
+                        rope_temporal_size=context_latents_input.shape[2],
+                        start_rope_start_idx=0,
+                    )
+                    if self.do_classifier_free_guidance:
+                        self._kv_cache_neg = self.transformer(
                             bi_inference=False,
                             ar_txt_inference=False,
                             ar_vision_inference=True,
@@ -1152,31 +1201,25 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                             viewmats=context_viewmats.to(self.target_dtype),
                             Ks=context_Ks.to(self.target_dtype),
                             action=context_action.to(self.target_dtype),
-                            kv_cache=self._kv_cache,
+                            kv_cache=self._kv_cache_neg,
                             cache_vision=True,
                             rope_temporal_size=context_latents_input.shape[2],
                             start_rope_start_idx=0,
                         )
-                        if self.do_classifier_free_guidance:
-                            self._kv_cache_neg = self.transformer(
-                                bi_inference=False,
-                                ar_txt_inference=False,
-                                ar_vision_inference=True,
-                                hidden_states=context_latents_input,
-                                timestep=context_timestep,
-                                timestep_r=None,
-                                mask_type=task_type,
-                                return_dict=False,
-                                viewmats=context_viewmats.to(self.target_dtype),
-                                Ks=context_Ks.to(self.target_dtype),
-                                action=context_action.to(self.target_dtype),
-                                kv_cache=self._kv_cache_neg,
-                                cache_vision=True,
-                                rope_temporal_size=context_latents_input.shape[2],
-                                start_rope_start_idx=0,
-                            )
 
-                # ── denoise loop ──────────────────────────────────────────────────
+                self.scheduler.set_timesteps(self.num_inference_steps, device=device)
+
+            start_idx = chunk_i * self.chunk_latent_frames
+            end_idx = chunk_i * self.chunk_latent_frames + self.chunk_latent_frames
+
+            with (
+                self.progress_bar(total=self.num_inference_steps) as progress_bar,
+                auto_offload_model(
+                    self.transformer,
+                    self.execution_device,
+                    enabled=self.enable_offloading,
+                ),
+            ):
                 for i, t in enumerate(timesteps):
                     timestep_input = torch.full(
                         (self.chunk_latent_frames,),
@@ -1257,7 +1300,6 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                     ):
                         if progress_bar is not None:
                             progress_bar.update()
-
         return latents
 
     def bi_rollout(
@@ -1823,6 +1865,7 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                 Ks=Ks,
                 action=action,
                 device=device,
+                transformer_resident=kwargs.get("transformer_resident_ar_rollout", False),
             )
         elif model_type == "bi":
             latents = self.bi_rollout(

@@ -85,3 +85,4 @@ torchrun --nproc_per_node=$N_INFERENCE_GPU hyvideo/generate.py \
   --use_vae_parallel false \
   --use_sageattn false \
   --use_fp8_gemm false \
+  --transformer_resident_ar_rollout true
