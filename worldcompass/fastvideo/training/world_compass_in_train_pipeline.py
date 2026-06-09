@@ -1446,12 +1446,12 @@ class WorldCompassInTrainPipeline(LoRAPipeline, ABC):
                         with self.ema_generator.apply_policy_shadow_to_model(
                             self.transformer
                         ):
-                            model_pred_old = model_pred = self.transformer(
+                            model_pred_old = self.transformer(
                                 txt_branch=False,
                                 input_dict=input_dict,
                             )[0]
 
-                    model_pred_old = model_pred = self.transformer(
+                    model_pred = self.transformer(
                         txt_branch=False,
                         input_dict=input_dict,
                     )[0]
