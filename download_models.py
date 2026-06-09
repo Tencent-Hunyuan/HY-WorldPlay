@@ -263,6 +263,9 @@ def print_paths():
         f"AR_ACTION_MODEL_PATH={worldplay_path}/ar_model/diffusion_pytorch_model.safetensors"
     )
     print(
+        f"AR_RL_ACTION_MODEL_PATH={worldplay_path}/ar_rl_model/diffusion_pytorch_model.safetensors"
+    )
+    print(
         f"BI_ACTION_MODEL_PATH={worldplay_path}/bidirectional_model/diffusion_pytorch_model.safetensors"
     )
     print(

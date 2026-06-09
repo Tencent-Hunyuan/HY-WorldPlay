@@ -1,3 +1,5 @@
+export PYTHONPATH=$(cd "$(dirname "$0")" && pwd):$PYTHONPATH
+
 export T2V_REWRITE_BASE_URL="<your_vllm_server_base_url>"
 export T2V_REWRITE_MODEL_NAME="<your_model_name>"
 export I2V_REWRITE_BASE_URL="<your_vllm_server_base_url>"
@@ -83,3 +85,4 @@ torchrun --nproc_per_node=$N_INFERENCE_GPU hyvideo/generate.py \
   --use_vae_parallel false \
   --use_sageattn false \
   --use_fp8_gemm false \
+  --transformer_resident_ar_rollout true

@@ -1012,6 +1012,47 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
         Ks,
         action,
         device,
+        transformer_resident=False,
+    ):
+        # When transformer_resident is True, keep the transformer on GPU for the
+        # entire AR rollout instead of loading/offloading it per chunk.  This does
+        # not increase peak VRAM (other large modules are already offloaded before
+        # ar_rollout is called) but removes per-chunk transfer overhead.
+        if transformer_resident and self.enable_offloading:
+            with auto_offload_model(
+                self.transformer, self.execution_device, enabled=True
+            ):
+                orig = self.enable_offloading
+                self.enable_offloading = False
+                try:
+                    return self._ar_rollout_inner(
+                        latents, timesteps, prompt_embeds, prompt_mask,
+                        vision_states, cond_latents, task_type, extra_kwargs,
+                        viewmats, Ks, action, device,
+                    )
+                finally:
+                    self.enable_offloading = orig
+        else:
+            return self._ar_rollout_inner(
+                latents, timesteps, prompt_embeds, prompt_mask,
+                vision_states, cond_latents, task_type, extra_kwargs,
+                viewmats, Ks, action, device,
+            )
+
+    def _ar_rollout_inner(
+        self,
+        latents,
+        timesteps,
+        prompt_embeds,
+        prompt_mask,
+        vision_states,
+        cond_latents,
+        task_type,
+        extra_kwargs,
+        viewmats,
+        Ks,
+        action,
+        device,
     ):
         self.init_kv_cache()
         positive_idx = 1 if self.do_classifier_free_guidance else 0
@@ -1824,6 +1865,7 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
                 Ks=Ks,
                 action=action,
                 device=device,
+                transformer_resident=kwargs.get("transformer_resident_ar_rollout", False),
             )
         elif model_type == "bi":
             latents = self.bi_rollout(

@@ -1,7 +1,37 @@
+<div align="center">
+  <img src="assets/teaser.webp">
+
+<h1>🧭 WorldCompass: Reinforcement Learning for Long-Horizon World Models</h1>
+
+[English](README.md) | [简体中文](README_zh.md)
+
+
+
+</div>
+
+<div align="center">
+  <a href=https://3d.hunyuan.tencent.com/sceneTo3D target="_blank"><img src=https://img.shields.io/badge/Official%20Site-333399.svg?logo=homepage height=22px></a>
+  <a href=https://huggingface.co/tencent/HY-WorldPlay target="_blank"><img src=https://img.shields.io/badge/%F0%9F%A4%97%20Models-d96902.svg height=22px></a>
+  <a href=https://3d-models.hunyuan.tencent.com/world/ target="_blank"><img src= https://img.shields.io/badge/Page-bb8a2e.svg?logo=github height=22px></a>
+  <a href=https://3d-models.hunyuan.tencent.com/world/world1_5/HYWorld_1.5_Tech_Report.pdf target="_blank"><img src=https://img.shields.io/badge/Report-b5212f.svg?logo=arxiv height=22px></a>
+  <a href=https://discord.gg/dNBrdrGGMa target="_blank"><img src= https://img.shields.io/badge/Discord-white.svg?logo=discord height=22px></a>
+  <a href=https://x.com/TencentHunyuan target="_blank"><img src=https://img.shields.io/badge/Tencent%20HY-black.svg?logo=x height=22px></a>
+ <a href="#community-resources" target="_blank"><img src=https://img.shields.io/badge/Community-lavender.svg?logo=homeassistantcommunitystore height=22px></a>
+</div>
+
+[//]: # (  <a href=# target="_blank"><img src=https://img.shields.io/badge/Report-b5212f.svg?logo=arxiv height=22px></a>)
+
+[//]: # (  <a href=# target="_blank"><img src= https://img.shields.io/badge/Colab-8f2628.svg?logo=googlecolab height=22px></a>)
+
+[//]: # (  <a href="#"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/v/mulankit?logo=pypi"  height=22px></a>)
+
+
 ## Introduction to WorldCompass
 
 WorldCompass uses Group Relative Policy Optimization (GRPO) idea to improve
 action-following and visual quality in autoregressive video generation.
+
+[Research Paper](https://arxiv.org/abs/2602.09022)
 
 ## Training Guidence
 
@@ -65,7 +95,7 @@ The script will download:
 
 ---
 
-**2.2 Clone DepthAnythingV3 Repository**
+**2.2 Clone DepthAnythingV3 Repository (Optional, Using WorldMirror as Reward by default)**
 
 ```bash
 git clone https://github.com/ByteDance-Seed/Depth-Anything-3.git DepthAnythingV3

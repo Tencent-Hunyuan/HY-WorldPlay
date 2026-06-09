@@ -98,15 +98,55 @@ https://github.com/user-attachments/assets/19a8ef47-3d1a-4c29-a80f-500b342bfc80
 
 
 ## 🛠️ 依赖与安装
+
+### 1. 创建环境
 ```bash
 conda create --name worldplay python=3.10 -y
 conda activate worldplay
 pip install -r requirements.txt
 ```
 
-- Flash Attention: 安装 Flash Attention 以获得更快的推理速度和更低的 GPU 内存消耗。详细的安装说明可参考 [Flash Attention](https://github.com/Dao-AILab/flash-attention)。
+### 2. 安装注意力库
+* SageAttention（WAN 管道**必需**，HunyuanVideo 管道可选）：
+  ```bash
+  pip install sageattention
+  ```
+  或者从源码编译以获得更好的性能：
+  ```bash
+  git clone https://github.com/cooper1637/SageAttention.git
+  cd SageAttention
+  export EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32 # 可选
+  python3 setup.py install
+  ```
 
-- HunyuanVideo-1.5 基础模型: 按照 [HunyuanVideo-1.5 下载说明](https://huggingface.co/tencent/HunyuanVideo-1.5#-download-pretrained-models) 下载预训练的 HunyuanVideo-1.5 模型。在使用 HY-World 1.5 权重之前,需要先下载此基础模型，其中使用的是 [480P-I2V 模型](https://huggingface.co/tencent/HunyuanVideo-1.5/tree/main/transformer/480p_i2v)。
+* Flash Attention（可选，加速 HunyuanVideo 推理）：
+  ```bash
+  pip install flash-attn --no-build-isolation
+  ```
+  详细安装说明可参考 [Flash Attention](https://github.com/Dao-AILab/flash-attention)
+
+### 3. 下载所有模型
+
+按照 [HunyuanVideo-1.5 下载说明](https://huggingface.co/tencent/HunyuanVideo-1.5#-download-pretrained-models) 下载预训练的 HunyuanVideo-1.5 基础模型，其中使用的是 [480P-I2V 模型](https://huggingface.co/tencent/HunyuanVideo-1.5/tree/main/transformer/480p_i2v)。
+
+还需要将以下模型放置在 HunyuanVideo-1.5 模型目录（`MODEL_PATH`）下：
+- **文本编码器**: [Qwen2.5-VL-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct) → `text_encoder/llm/`
+- **ByT5 编码器**: [google/byt5-small](https://huggingface.co/google/byt5-small) → `text_encoder/byt5-small/`
+- **Glyph 编码器**: [AI-ModelScope/Glyph-SDXL-v2](https://modelscope.cn/models/AI-ModelScope/Glyph-SDXL-v2) → `text_encoder/Glyph-SDXL-v2/`
+- **视觉编码器**: [FLUX.1-Redux-dev](https://huggingface.co/black-forest-labs/FLUX.1-Redux-dev)（需申请访问权限） → `vision_encoder/siglip/`
+
+**或者**，我们提供了一个下载脚本来自动下载并组织所有需要的模型：
+
+```bash
+python download_models.py --hf_token <your_huggingface_token>
+```
+
+如果暂时没有 FLUX 访问权限，可以跳过视觉编码器（仅适用于 WAN 管道；HunyuanVideo 管道需要视觉编码器）：
+```bash
+python download_models.py --skip_vision_encoder
+```
+
+下载完成后，脚本会打印需要填入 `run.sh` 的模型路径。
 
 
 ## 🎮 快速开始
@@ -146,11 +186,13 @@ https://github.com/user-attachments/assets/643a33a4-b677-4eff-ad1d-32205c594274
 ```bash
 # 这些路径由 download_models.py 在下载完成后打印
 MODEL_PATH=<download_script打印的路径>
-AR_ACTION_MODEL_PATH=<download_script打印的路径>/ar_model
-AR_RL_ACTION_MODEL_PATH=<download_script打印的路径>/ar_rl_model
-BI_ACTION_MODEL_PATH=<download_script打印的路径>/bidirectional_model
-AR_DISTILL_ACTION_MODEL_PATH=<download_script打印的路径>/ar_distilled_action_model
+AR_ACTION_MODEL_PATH=<download_script打印的路径>/ar_model/diffusion_pytorch_model.safetensors
+AR_RL_ACTION_MODEL_PATH=<download_script打印的路径>/ar_rl_model/diffusion_pytorch_model.safetensors
+BI_ACTION_MODEL_PATH=<download_script打印的路径>/bidirectional_model/diffusion_pytorch_model.safetensors
+AR_DISTILL_ACTION_MODEL_PATH=<download_script打印的路径>/ar_distilled_action_model/diffusion_pytorch_model.safetensors
 ```
+
+> **注意：** action 模型路径（`AR_ACTION_MODEL_PATH` 等）应指向 **`.safetensors` 文件**，而非目录。
 
 #### 配置选项
 
@@ -321,6 +363,12 @@ https://github.com/user-attachments/assets/f165f409-5a74-4e19-a32c-fc98d92259e1
     journal={arXiv preprint}
 }
 
+@article{wang2026worldcompass,
+  title={WorldCompass: Reinforcement Learning for Long-Horizon World Models},
+  author={Wang, Zehan and Wang, Tengfei and Zhang, Haiyu and Zuo, Xuhui and Wu, Junta and Wang, Haoyuan and Sun, Wenqiang and Wang, Zhenwei and Cao, Chenjie and Zhao, Hengshuang and others},
+  journal={arXiv preprint},
+  year={2026}
+}
 ```
 
 
