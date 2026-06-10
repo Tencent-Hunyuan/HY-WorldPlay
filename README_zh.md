@@ -349,12 +349,6 @@ https://github.com/user-attachments/assets/f165f409-5a74-4e19-a32c-fc98d92259e1
   year={2025}
 }
 
-@article{wang2026worldcompass,
-  title={WorldCompass: Reinforcement Learning for Long-Horizon World Models},
-  author={Wang, Zehan and Wang, Tengfei and Zhang, Haiyu and Zuo, Xuhui and Wu, Junta and Wang, Haoyuan and Sun, Wenqiang and Wang, Zhenwei and Cao, Chenjie and Zhao, Hengshuang and others},
-  journal={arXiv preprint},
-  year={2026}
-}
 
 @article{worldplay2025,
     title={WorldPlay: Towards Long-Term Geometric Consistency for Real-Time Interactive World Model},
