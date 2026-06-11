@@ -403,13 +403,13 @@ class CameraJsonWMemDataset(Dataset):
         self.points_local = generate_points_in_sphere(50000, 8.0).to(device)
 
         self.neg_prompt_pt = torch.load(
-            "/your_path/to/hunyuan_neg_prompt.pt",
+            "./model_ckpts/hunyuan_neg_prompt.pt",
             map_location="cpu",
             weights_only=True,
         )
 
         self.neg_byt5_pt = torch.load(
-            "/your_path/to/hunyuan_neg_byt5_prompt.pt",
+            "./model_ckpts/hunyuan_neg_byt5_prompt.pt",
             map_location="cpu",
             weights_only=True,
         )

@@ -5,7 +5,9 @@ export WANDB_MODE=offline
 export TOKENIZERS_PARALLELISM=false
 # export TRAINER_ATTENTION_BACKEND=TORCH_SDPA
 
-MODEL_PATH=   # Path to pretrained hunyuanvideo-1.5 model                        
+TRANSFORMER_MODEL_PATH=./model_ckpts/HunyuanVideo-1.5/transformer/480p_i2v
+AR_DISTILL_ACTION_MODEL_PATH=./model_ckpts/HY-WorldPlay/ar_distilled_action_model/diffusion_pytorch_model.safetensors
+MODEL_PATH=./model_ckpts/HunyuanVideo-1.5
 VALIDATION_DATASET_FILE=    # Path to validation json file                                      
 
 NUM_GPUS=4                                                                                                                                                                    # 节点数量
@@ -13,7 +15,7 @@ export CUDA_VISIBLE_DEVICES=4,5,6,7
 
 # Training arguments
 training_args=(
-  --json_path # Path to training dataset json file                   
+  --json_path ./preprocessed_gamefactory_f129/dataset_index.json
   --causal                                                                                    
   --action                                                                                    
   --i2v_rate 0.2
@@ -50,8 +52,8 @@ parallel_args=(
 # Model arguments
 model_args=(
   --cls_name "HunyuanTransformer3DARActionModel"
-  --load_from_dir # Path to pretrained transformer directory
-  --ar_action_load_from_dir # Path to pretrained AR action model directory when training with memory
+  --load_from_dir $TRANSFORMER_MODEL_PATH
+  --ar_action_load_from_dir $AR_DISTILL_ACTION_MODEL_PATH
   --model_path $MODEL_PATH
   --pretrained_model_name_or_path $MODEL_PATH
 )
@@ -62,7 +64,7 @@ dataset_args=(
 )
 
 validation_args=(
-#  --log_validation
+  # --log_validation
   # --validation_dataset_file $VALIDATION_DATASET_FILE
   --validation_steps 200
   --validation_sampling_steps "50"
@@ -88,7 +90,7 @@ miscellaneous_args=(
   --dit_precision "fp32"
   --num_euler_timesteps 50
   --ema_start_step 0
-#  --enable_gradient_checkpointing_type "full"
+  # --enable_gradient_checkpointing_type "full"
 )
 
 export MASTER_PORT=29611

@@ -761,7 +761,7 @@ class TrainingArgs(TrainerArgs):
     def add_cli_args(parser: FlexibleArgumentParser) -> FlexibleArgumentParser:
         parser.add_argument("--data-path",
                             type=str,
-                            required=True,
+                            default="",
                             help="Path to parquet files")
         parser.add_argument("--dataloader-num-workers",
                             type=int,
