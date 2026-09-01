@@ -80,6 +80,7 @@ from hyvideo.utils.multitask_utils import (
 )
 from hyvideo.utils.retrieval_context import (
     generate_points_in_sphere,
+    make_retrieval_generator,
     select_aligned_memory_frames,
 )
 
@@ -1846,7 +1847,10 @@ class HunyuanVideo_1_5_Pipeline(DiffusionPipeline):
         self._num_timesteps = len(timesteps)
 
         latent_frames = latents.shape[2]
-        self.points_local = generate_points_in_sphere(50000, 8.0).to(device)
+        retrieval_generator = make_retrieval_generator(generator, seed)
+        self.points_local = generate_points_in_sphere(
+            50000, 8.0, generator=retrieval_generator
+        ).to(device)
         self.chunk_num = latent_frames // chunk_latent_frames
         self.chunk_latent_frames = chunk_latent_frames
         self.num_inference_steps = num_inference_steps

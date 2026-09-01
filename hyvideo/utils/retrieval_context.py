@@ -14,23 +14,65 @@
 # of rights and permissions under this agreement.
 # See the License for the specific language governing permissions and limitations under the License.
 
-import torch
-import numpy as np
-from typing import List, Tuple, Dict
 import math
+from typing import List, Tuple
+
+import numpy as np
+import torch
 
 
-def generate_points_in_sphere(n_points: int, radius: float) -> torch.Tensor:
+def make_retrieval_generator(
+    generator: (
+        torch.Generator
+        | list[torch.Generator]
+        | tuple[torch.Generator, ...]
+        | None
+    ) = None,
+    seed: int | None = None,
+) -> torch.Generator:
+    """Create an isolated CPU generator for Monte Carlo memory retrieval.
+
+    The source generator is only inspected for its initial seed, so neither its
+    state nor the global RNG state is advanced. When a list of generation
+    generators is supplied, retrieval follows the first trajectory, matching
+    the camera path used by the current memory selector.
+    """
+    if isinstance(generator, (list, tuple)):
+        if not generator:
+            raise ValueError("generator list must not be empty")
+        generator = generator[0]
+
+    if generator is not None:
+        if not isinstance(generator, torch.Generator):
+            raise TypeError("generator must be a torch.Generator or a sequence of them")
+        retrieval_seed = generator.initial_seed()
+    elif seed is not None:
+        retrieval_seed = seed
+    else:
+        # Reading the initial seed does not consume the global RNG state.
+        retrieval_seed = torch.initial_seed()
+
+    return torch.Generator(device="cpu").manual_seed(retrieval_seed)
+
+
+def generate_points_in_sphere(
+    n_points: int,
+    radius: float,
+    generator: torch.Generator | None = None,
+) -> torch.Tensor:
     """
     Uniformly sample points within a sphere of a specified radius.
 
     :param n_points: The number of points to generate.
     :param radius: The radius of the sphere.
+    :param generator: Optional generator. Sampling occurs on its device and
+        advances only this generator's state.
     :return: A tensor of shape (n_points, 3), representing the (x, y, z) coordinates of the points.
     """
-    samples_r = torch.rand(n_points)
-    samples_phi = torch.rand(n_points)
-    samples_u = torch.rand(n_points)
+    sampling_device = generator.device if generator is not None else None
+    samples_r = torch.rand(n_points, generator=generator, device=sampling_device)
+    samples_phi = torch.rand(n_points, generator=generator, device=sampling_device)
+    samples_u = torch.rand(n_points, generator=generator, device=sampling_device)
 
     r = radius * torch.pow(samples_r, 1 / 3)
     phi = 2 * math.pi * samples_phi
