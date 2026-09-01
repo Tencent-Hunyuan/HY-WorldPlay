@@ -31,7 +31,10 @@ from models.utils import (
     shard_latents_dim_across_sp,
     select_mem_frames_wan,
 )
-from hyvideo.utils.retrieval_context import generate_points_in_sphere
+from hyvideo.utils.retrieval_context import (
+    generate_points_in_sphere,
+    make_retrieval_generator,
+)
 from distributed.parallel_state import (
     get_sp_parallel_rank,
     get_sp_parallel_local_rank,
@@ -618,7 +621,10 @@ class WanPipeline(DiffusionPipeline, WanLoraLoaderMixin):
             else:
                 batch_size = prompt_embeds.shape[0]
 
-            self.points_local = generate_points_in_sphere(50000, 8.0).to(device)
+            retrieval_generator = make_retrieval_generator(generator)
+            self.points_local = generate_points_in_sphere(
+                50000, 8.0, generator=retrieval_generator
+            ).to(device)
 
             # 3. Encode input prompt
             prompt_embeds, negative_prompt_embeds = self.encode_prompt(
