@@ -36,7 +36,7 @@
 https://github.com/user-attachments/assets/9fd12b40-41ab-4201-8667-8b333db1123d
 
 ## 🔥 News
-- April 16, 2026: 🤗 We release [HY-World-2.0](https://github.com/Tencent-Hunyuan/HY-World-2.0), state-of-the-art 3D world model! 
+- April 16, 2026: 🤗 We release [HY-World-2.0](https://github.com/Tencent-Hunyuan/HY-World-2.0), a state-of-the-art 3D world model! 
 - March 8, 2026: 🚀 We release the RL post-training code 🧭 [WorldCompass](worldcompass/README.md) for WorldPlay-8B model (based on HY Video)! Read more in [our new paper](https://arxiv.org/abs/2602.09022).
 - January 6, 2026: 🚀 We release the training code for WorldPlay-8B model (based on HY Video), enabling the community to train and fine-tune their own world models!
 - January 6, 2026: 🎯 We open-source WorldPlay-5B model (based on WAN), a new lightweight model that fits into small-VRAM GPUs (but with compromised quality)!
@@ -44,9 +44,9 @@ https://github.com/user-attachments/assets/9fd12b40-41ab-4201-8667-8b333db1123d
 - December 17, 2025: 👋 We present the [technical report](https://3d-models.hunyuan.tencent.com/world/world1_5/HYWorld_1.5_Tech_Report.pdf) (and [research paper](https://arxiv.org/abs/2512.14614)) of HY-World 1.5 (WorldPlay), please check out the details and spark some discussion!
 - December 17, 2025: 🤗 We release the first open-source, real-time interactive, and long-term geometric consistent world model, HY-World 1.5 (WorldPlay)!
 
-> Join our **[Wechat](#)** and **[Discord](https://discord.gg/dNBrdrGGMa)** group to discuss and find help from us.
+> Join our **[Wechat](#)** and **[Discord](https://discord.gg/dNBrdrGGMa)** groups to discuss and find help from us.
 
-| Wechat Group                                     | Xiaohongshu                                           | X                                           | Discord                                           |
+| WeChat Group                                     | Xiaohongshu                                           | X                                           | Discord                                           |
 |--------------------------------------------------|-------------------------------------------------------|---------------------------------------------|---------------------------------------------------|
 | <img src="assets/qrcode/wechat.png"  height=140> | <img src="assets/qrcode/xiaohongshu.png"  height=140> | <img src="assets/qrcode/x.png"  height=140> | <img src="assets/qrcode/discord.png"  height=140> | 
 
@@ -101,7 +101,7 @@ While **HY-World 1.0** is capable of generating immersive 3D worlds, it relies o
 
 - **Inference Pipeline**
   
-  Given a single image or text prompt to describe a world, our model performs a next chunk (16 video frames) prediction task to generate future videos conditioned on action from users. For the generation of each chunk, we dynamically reconstitute context memory from past chunks to enforce long-term temporal and geometric consistency.
+  Given a single image or text prompt to describe a world, our model performs a next-chunk (16 video frames) prediction task to generate future videos conditioned on action from users. For the generation of each chunk, we dynamically reconstitute context memory from past chunks to enforce long-term temporal and geometric consistency.
 
 <p align="center">
   <img src="assets/pipeline.png">
@@ -253,7 +253,7 @@ In `run.sh`, you can configure:
 
 #### Model Selection
 
-Uncomment one of the three inference commands in `run.sh`:
+Uncomment one of the four inference commands in `run.sh`:
 
 1. **Bidirectional Model**:
    ```bash
@@ -297,7 +297,7 @@ POSE='w-31'
 # Move forward for 31 latents (default). Generate [1 + 31] latents
 POSE='w-31'
 
-# Move forward 3 latents, rotate right 1 latents, move right 4 latents. Generate [1 + 3 + 1 + 4] latents
+# Move forward 3 latents, rotate right 1 latent, move right 4 latents. Generate [1 + 3 + 1 + 4] latents
 POSE='w-3, right-1, d-4'
 
 # Complex trajectory. Generate [1 + 2 + 1 + 2 + 4] latents
@@ -343,7 +343,7 @@ For detailed information about  WAN-based WorldPlay pipeline, please refer to [w
 
 ## ⚙️Training
 
-We provide a detailed documentation in [Training Documentation](./trainer/README.md).
+We provide detailed documentation in [Training Documentation](./trainer/README.md).
 
 ## 📊 Evaluation
 
